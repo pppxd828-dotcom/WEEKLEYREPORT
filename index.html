@@ -751,23 +751,41 @@ function buildReport(wk){
   const pool=poolIds(wk);
   const logs=S.Progress_Log.filter(p=>p['週別']===wk && cardById(p['卡片ID']));
   logs.sort((a,b)=>{const ia=pool.indexOf(a['卡片ID']), ib=pool.indexOf(b['卡片ID']); return (ia<0?999:ia)-(ib<0?999:ib);});
+  // 先版本、再 RQ：有版本ID的卡歸入「◆ 版本」，其下依關聯單號(RQ)聚合；沒有版本的維持「◆ RQ」
+  const verLabel = ver => {
+    const rms=tbl('Release_Master').filter(r=>String(r['版本ID'])===ver);
+    const names=rms.map(r=>`${r['軟體版號']}（${shortVendor(r['廠商名稱'])}）`).filter(Boolean).join('、');
+    return `版本 ${ver}${names?'　'+names:''}`;
+  };
   const sec = field => {
-    const groups=new Map();
+    const groups=new Map(); // 群組key -> {ver, rqs:Map(rqKey -> [{c,l}])}
     logs.filter(l=>String(l[field]||'').trim()).forEach(l=>{
-      const c=cardById(l['卡片ID']); const key=String(c['關聯單號']||'').trim()||('#'+c['卡片ID']);
-      if(!groups.has(key)) groups.set(key,[]); groups.get(key).push({c,l});
+      const c=cardById(l['卡片ID']); const ver=String(c['版本ID']||'').trim(), isRM=c['_v']==='RM';
+      const rq=isRM?'@ver':(String(c['關聯單號']||'').trim()||('#'+c['卡片ID']));
+      const gk=ver?('V:'+ver):('R:'+rq);
+      if(!groups.has(gk)) groups.set(gk,{ver,rqs:new Map()});
+      const g=groups.get(gk); if(!g.rqs.has(rq)) g.rqs.set(rq,[]); g.rqs.get(rq).push({c,l});
     });
     if(!groups.size) return '（無）';
-    const ind = t => String(t).trim().replace(/\n/g,'\n　　');
-    return [...groups.entries()].map(([key,arr])=>{
-      const ref = key.startsWith('#')?'':key;
-      if(arr.length===1){ const {c,l}=arr[0]; return `◆ ${ref?ref+'｜':''}${c['標題']}【${l['狀態']}】\n　　${ind(l[field])}`; }
-      return `◆ ${ref}\n`+arr.map(({c,l})=>`　・${c['標題']}【${l['狀態']}】\n　　${ind(l[field])}`).join('\n');
+    const ind = (t,pad) => String(t).trim().replace(/\n/g,'\n'+pad);
+    const one = ({c,l},head,pad) => `${head}${c['標題']}【${l['狀態']}】\n${pad}${ind(l[field],pad)}`;
+    return [...groups.values()].map(g=>{
+      if(!g.ver){ // 沒有版本：維持原本「◆ RQ」格式
+        const [key,arr]=[...g.rqs.entries()][0]; const ref=key.startsWith('#')?'':key;
+        if(arr.length===1) return one(arr[0],`◆ ${ref?ref+'｜':''}`,'　　');
+        return `◆ ${ref}\n`+arr.map(x=>one(x,'　・','　　')).join('\n');
+      }
+      const lines=[...g.rqs.entries()].map(([rq,arr])=>{
+        const ref = rq==='@ver'?'版本整體':(rq.startsWith('#')?'':rq);
+        if(arr.length===1) return one(arr[0],`　▸ ${ref?ref+'｜':''}`,'　　');
+        return `　▸ ${ref}\n`+arr.map(x=>one(x,'　　・','　　　')).join('\n');
+      });
+      return `◆ ${verLabel(g.ver)}\n`+lines.join('\n');
     }).join('\n\n');
   };
   const m=weekStart(wk);
   const text = `【週報】${wk}（${fmtD(m)} ～ ${fmtD(addDays(m,6))}）\n\n一、本週關鍵進展\n${sec('本週進展')}\n\n二、風險與協同事項\n${sec('風險與協同')}\n\n三、下週預計推展\n${sec('下週預計')}\n`;
-  const ctx = logs.map(l=>{const c=cardById(l['卡片ID']); return `- ${c['關聯單號']||'（無單號）'}｜${c['標題']}｜類型:${c['卡片類型']}｜廠商:${c['廠商']||'-'}｜負責:${c['負責人']||'-'}｜狀態:${l['狀態']}｜截止:${String(c['截止日']||'-').slice(0,10)}`;}).join('\n');
+  const ctx = logs.map(l=>{const c=cardById(l['卡片ID']); return `- ${c['版本ID']?'版本'+c['版本ID']+'｜':''}${c['_v']==='RM'?'版本整體':(c['關聯單號']||'（無單號）')}｜${c['標題']}｜類型:${c['卡片類型']}｜廠商:${c['廠商']||'-'}｜負責:${c['負責人']||'-'}｜狀態:${l['狀態']}｜截止:${String(c['截止日']||'-').slice(0,10)}`;}).join('\n');
   return {text, ctx, count:logs.length};
 }
 function polishPrompt(r){
@@ -775,7 +793,7 @@ function polishPrompt(r){
 
 【規則】
 1. 保留三段結構：一、本週關鍵進展／二、風險與協同事項／三、下週預計推展。
-2. 保留每個「◆」分組與其關聯單號，不得合併、刪除或改變分組順序。
+2. 保留每個「◆」分組（版本或關聯單號）與其下「▸」的 RQ 單號及縮排層級，不得合併、刪除或改變分組順序。
 3. 不得新增原文沒有的事實、日期、數字、人名或結論；語意不明處保留原意，不要臆測。
 4. 口吻精簡客觀，以完成式陳述成果，例如「已函請廠商查修」「已完成整合測試」；每點不超過兩句。
 5. 單號、版號、機台代碼、廠商名稱、專有名詞原樣保留。
@@ -1038,7 +1056,7 @@ function openCard(card, isNew){
       <div><label>卡片類型</label><select id="f-卡片類型">${opts(TYPES,c['卡片類型'])}</select></div>
       <div><label>狀態</label><select id="f-狀態">${opts(statusList(c['卡片類型']),c['狀態'])}</select></div>
       <div class="full"><label>標題 <span class="req">*</span></label><input id="f-標題" value="${esc(c['標題'])}"></div>
-      <div><label>關聯單號（週報依此分組）</label><input id="f-關聯單號" value="${esc(c['關聯單號'])}" placeholder="RQ100062405"></div>
+      <div><label>RQ 單號／關聯單號（週報依此分組）</label><input id="f-關聯單號" value="${esc(c['關聯單號'])}" placeholder="RQ100051145"></div>
       <div><label>區塊分類</label><select id="f-區塊分類"><option></option>${opts(cats,c['區塊分類'])}</select></div>
       <div><label>廠商</label><input id="f-廠商" list="dl-v" value="${esc(c['廠商'])}"><datalist id="dl-v">${vendors.map(v=>`<option value="${esc(v)}">`).join('')}</datalist></div>
       <div><label>負責人</label><input id="f-負責人" list="dl-p" value="${esc(c['負責人'])}"><datalist id="dl-p">${people.map(v=>`<option value="${esc(v)}">`).join('')}</datalist></div>
@@ -1070,6 +1088,8 @@ function openCard(card, isNew){
     if(!f('標題')){ toast('標題必填',true); return; }
     ['卡片類型','狀態','標題','關聯單號','區塊分類','廠商','負責人','開始日','截止日','版本ID','合約ID','故障類別','觸發規則','描述'].forEach(k=>c[k]=f(k)??'');
     if(c['開始日']&&c['截止日']&&c['開始日']>c['截止日']){ toast('開始日不能晚於截止日',true); return; }
+    if(/^rq\d+$/i.test(c['關聯單號'])) c['關聯單號']=c['關聯單號'].toUpperCase(); // RQ 單號統一大寫，週報才會合併同一個 RQ
+    else if(c['卡片類型']==='專案' && c['關聯單號']) toast('提醒：專案的單號通常是 RQ＋數字（例 RQ100051145）',true);
     close(); await saveCard(c, exists?'已儲存':'已建立卡片'); render();
   };
   if(exists){
@@ -1268,9 +1288,20 @@ function renderRelease(){
   let keys=[...groups.keys()].sort((a,b)=>(parseD(groups.get(b)[0]['預計上線日'])||0)-(parseD(groups.get(a)[0]['預計上線日'])||0));
   if(!relShowDone) keys=keys.filter(k=>groups.get(k).some(r=>!String(r['整體狀態']).includes('已完成')));
   const sp=tbl('資安與專案排程').slice().sort((a,b)=>(parseD(a['預計起日'])||9e15)-(parseD(b['預計起日'])||9e15));
+  const projHtml=(k,rows)=>{
+    const projs=allCards().filter(c=>!c._v && String(c['版本ID']||'').trim()===k);
+    const have=new Set(allCards().filter(c=>!c._v).map(c=>String(c['關聯單號']||'').trim().toUpperCase()).filter(Boolean));
+    const covered=[...new Set(rows.flatMap(r=>String(r['涵蓋單號清單']||'').toUpperCase().match(/RQ\d+/g)||[]))].filter(q=>!have.has(q));
+    return `<div style="margin-top:12px;border-top:1px solid var(--line2);padding-top:10px">
+      <div class="row"><b>本版包含的專案</b><span class="muted">${projs.length} 個 RQ 專案</span><span class="sp"></span><button class="sm" data-newproj="${esc(k)}">＋ 新增專案卡</button></div>
+      ${projs.length?`<table class="list" style="margin-top:8px"><thead><tr><th>RQ 單號</th><th>專案</th><th>廠商</th><th>負責人</th><th>狀態</th></tr></thead><tbody>
+        ${projs.map(c=>`<tr class="click" data-open="${esc(c['卡片ID'])}"><td class="mono">${esc(c['關聯單號']||'—')}</td><td style="font-weight:500">${esc(c['標題'])}</td><td>${esc(shortVendor(c['廠商'])||'')}</td><td>${esc(c['負責人']||'')}</td><td><span class="${stClass(c['狀態'])}">${esc(c['狀態'])}</span></td></tr>`).join('')}</tbody></table>`:'<div class="muted" style="margin-top:6px;font-size:14px">還沒有專案卡掛在這個版本。</div>'}
+      ${covered.length?`<div class="chips" style="margin-top:8px">${covered.map(q=>`<span class="chip">${esc(q)}・涵蓋單號尚無專案卡 <a href="#" data-mkrq="${esc(k)}|${esc(q)}">建卡</a></span>`).join('')}</div>`:''}
+    </div>`; };
   const verHtml=k=>{ const rows=groups.get(k), r0=rows[0];
     return `<div class="panel" style="margin-bottom:14px">
       <div class="row"><div><div class="eyebrow">VERSION ${esc(k)}</div><h3 style="margin:4px 0 0">${esc(r0['出版性質']||'版本')}　<span class="mono muted">交版 ${esc(ds(r0['預計交版日']))} → 上線 ${esc(ds(r0['預計上線日']))}</span></h3></div><span class="sp"></span><span class="muted mono" style="font-size:13px">${esc(r0['涵蓋單號清單']||'')}</span></div>
+      ${projHtml(k,rows)}
       ${rows.map(r=>{ const st=stagesOf(r), done=st.filter(stageDone).length, cur=currentStage(st);
         return `<details style="margin-top:12px;border-top:1px solid var(--line2);padding-top:10px">
           <summary class="row" style="list-style:none">
@@ -1298,7 +1329,11 @@ function renderRelease(){
   $('#spNew').onclick=()=>openSP({},true);
   $('#tab-release').onclick=e=>{
     const a=e.target.closest('[data-rmedit]'), b=e.target.closest('[data-rsadd]'), s=e.target.closest('[data-rs]'), p=e.target.closest('[data-sp]');
-    if(a){ e.preventDefault(); openVersion(tbl('Release_Master').find(r=>r['列ID']===a.dataset.rmedit)); }
+    const np=e.target.closest('[data-newproj]'), mk=e.target.closest('[data-mkrq]'), op=e.target.closest('[data-open]');
+    if(np){ e.preventDefault(); const rm=tbl('Release_Master').find(r=>String(r['版本ID'])===np.dataset.newproj)||{}; openCard(blankCard({卡片類型:'專案',區塊分類:'軟體版本更新',版本ID:np.dataset.newproj,廠商:rm['廠商名稱']||'',負責人:'Mike',狀態:'進行中'}),true); }
+    else if(mk){ e.preventDefault(); const [v,q]=mk.dataset.mkrq.split('|'); const rm=tbl('Release_Master').find(r=>String(r['版本ID'])===v)||{}; openCard(blankCard({卡片類型:'專案',區塊分類:'軟體版本更新',版本ID:v,關聯單號:q,廠商:rm['廠商名稱']||'',負責人:'Mike',狀態:'進行中'}),true); }
+    else if(op){ openCard(cardById(op.dataset.open)); }
+    else if(a){ e.preventDefault(); openVersion(tbl('Release_Master').find(r=>r['列ID']===a.dataset.rmedit)); }
     else if(b){ e.preventDefault(); const rm=tbl('Release_Master').find(r=>r['列ID']===b.dataset.rsadd); openStage({版本ID:rm['版本ID'],廠商名稱:rm['廠商名稱'],軟體版本:rm['軟體版號'],階段狀態:'未開始'},true); }
     else if(s) openStage(tbl('Release_Stages').find(r=>r['列ID']===s.dataset.rs));
     else if(p) openSP(tbl('資安與專案排程').find(r=>r['列ID']===p.dataset.sp));
