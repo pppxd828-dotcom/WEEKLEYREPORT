@@ -140,6 +140,15 @@ h3{font-size:17px;margin:0 0 8px}
 .tl-bar{color:var(--c);background:var(--cb);border-color:var(--c)}
 .tl-dot{border-color:var(--c)}
 .tl-dia{border-color:var(--c);background:var(--cb)}
+.tl-row.rel{height:54px}
+.tl-row.rel .tl-lbl{top:0;line-height:22px}
+.tl-seg{position:absolute;top:28px;height:18px;border-radius:4px;border:1.5px solid var(--c);background:var(--cb);cursor:pointer}
+.tl-seg.done,.tl-sdia.done{opacity:.4}
+.tl-seg.cur{border:2px solid var(--accent);box-shadow:0 0 10px rgba(103,232,249,.5);background:#1C3B5C}
+.tl-sdia{position:absolute;top:31px;width:12px;height:12px;transform:rotate(45deg);border:2px solid var(--c);background:var(--cb);cursor:pointer}
+.tl-sdia.cur{border-color:var(--accent);box-shadow:0 0 8px var(--accent)}
+.tl-seg.late,.tl-sdia.late{border-color:var(--danger);box-shadow:0 0 8px rgba(255,107,107,.55)}
+.tl-golive{position:absolute;top:28px;width:18px;height:18px;transform:rotate(45deg);border:2px solid var(--c);background:var(--c);cursor:pointer}
 /* pool */
 .pool-wrap{display:grid;grid-template-columns:minmax(300px,390px) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:1050px){.pool-wrap{grid-template-columns:1fr}}
@@ -230,8 +239,9 @@ details summary{cursor:pointer}
       <button data-tab="pool"><em>02</em><span><b>水池與週報</b><small>POOL · REPORT</small></span></button>
       <button data-tab="atm"><em>03</em><span><b>ATM 參考</b><small>ATM SIGNALS</small></span></button>
       <button data-tab="cards"><em>04</em><span><b>卡片庫</b><small>CARD LIBRARY</small></span></button>
-      <button data-tab="contracts"><em>05</em><span><b>合約與定期</b><small>CONTRACTS</small></span></button>
-      <button data-tab="import"><em>06</em><span><b>匯入</b><small>IMPORT</small></span></button>
+      <button data-tab="release"><em>05</em><span><b>版本與排程</b><small>RELEASE · SCHEDULE</small></span></button>
+      <button data-tab="contracts"><em>06</em><span><b>合約與定期</b><small>CONTRACTS</small></span></button>
+      <button data-tab="import"><em>07</em><span><b>匯入</b><small>IMPORT</small></span></button>
     </nav>
   </div>
   <div class="snap" id="snap"></div>
@@ -250,6 +260,7 @@ details summary{cursor:pointer}
   <section id="tab-pool" class="hidden"></section>
   <section id="tab-atm" class="hidden"></section>
   <section id="tab-cards" class="hidden"></section>
+  <section id="tab-release" class="hidden"></section>
   <section id="tab-contracts" class="hidden"></section>
   <section id="tab-import" class="hidden"></section>
 </main>
@@ -283,8 +294,9 @@ const TAB_META = {
   pool:['02 / WEEKLY POOL','水池與週報','把本週要回報的卡片拖進水池，寫完進度就能產出週報'],
   atm:['03 / ATM SIGNALS','ATM 參考','依三條規則亮燈，開不開維修單由你決定'],
   cards:['04 / CARD LIBRARY','卡片庫','所有專案、資安、定期事項、Release 與維修單'],
-  contracts:['05 / CONTRACTS','合約與定期','合約的定期義務自動維持未來 3 期卡片，遇假日提前'],
-  import:['06 / IMPORT','匯入','貼上 AI 轉好的 JSON，已存在的自動跳過']
+  release:['05 / RELEASE · SCHEDULE','版本與排程','Release 版本、各作業階段與資安專案排程，改了會直接寫回試算表'],
+  contracts:['06 / CONTRACTS','合約與定期','合約管理與合約定期事項；依產卡規則自動維持未來 3 期定期卡'],
+  import:['07 / IMPORT','匯入','貼上 AI 轉好的 JSON，已存在的自動跳過']
 };
 const LS = { url:'wp.url', token:'wp.token', lane:'wp.lane', scale:'wp.scale', catOverride:'wp.catOverride', hideDone:'wp.hideDone' };
 
@@ -298,7 +310,7 @@ const ls = { get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:J
              set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
 const pad = n => String(n).padStart(2,'0');
 const fmtD = d => d ? `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` : '';
-const parseD = s => { if(!s) return null; const t=String(s).slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null; const d=new Date(t+'T00:00:00'); return isNaN(d)?null:d; };
+const parseD = s => { if(s===''||s===null||s===undefined) return null; if(typeof s==='number'||/^\d{5}(\.\d+)?$/.test(String(s))){ const u=new Date(Date.UTC(1899,11,30)+Math.floor(Number(s))*86400000); return new Date(u.getUTCFullYear(),u.getUTCMonth(),u.getUTCDate()); } const t=String(s).slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null; const d=new Date(t+'T00:00:00'); return isNaN(d)?null:d; };
 const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
 const daysBetween = (a,b) => Math.round((b-a)/86400000);
 const md = d => `${d.getMonth()+1}/${d.getDate()}`;
@@ -334,7 +346,7 @@ const weekLabel = wk => { const m=weekStart(wk), e=addDays(m,6); return `${wk}�
 /* =========================================================
    狀態
    ========================================================= */
-let S = {Cards:[],Progress_Log:[],Weekly_Pool:[],Report_History:[],Contracts:[],Holidays:[],Release_Master:[],Settings:[],'同事名單':[]};
+let S = {Cards:[],Progress_Log:[],Weekly_Pool:[],Report_History:[],Holidays:[],Release_Master:[],Release_Stages:[],'合約管理':[],'合約定期事項':[],'資安與專案排程':[],Settings:[],'同事名單':[]};
 let ATM = {rows:[], syncedAt:'', note:''};
 let CUR_WEEK = workWeek(TODAY);
 let TAB = 'timeline';
@@ -364,6 +376,7 @@ async function loadAll(){
       S = Object.assign(S, a.data); ATM = b.data || ATM;
     }catch(e){ toast('連線失敗：'+e.message+'（已改用示範資料）', true); S=demoData(); ATM=demoAtm(); }
   }
+  _vc=null;
   S.Cards.forEach(c => CARD_FIELDS.forEach(f => { if(c[f]===undefined||c[f]===null) c[f]=''; }));
   await genRecurring(true);
   renderHeader(); render();
@@ -395,9 +408,9 @@ $('#btnSettings').onclick = openSettings;
 function renderSnap(){
   const wk=workWeek(TODAY), ids=poolIds(wk);
   const written=ids.filter(id=>{const p=progOf(wk,id); return p&&String(p['本週進展']).trim();}).length;
-  const due=S.Cards.filter(c=>!isDone(c)&&dueThisWeek(c,wk)).length;
+  const due=allCards().filter(c=>!isDone(c)&&dueThisWeek(c,wk)).length;
   let pend=0; try{ pend=computeAlerts().filter(a=>!a.ticket).length; }catch(e){}
-  const act=S.Cards.filter(c=>!isDone(c)).length;
+  const act=allCards().filter(c=>!isDone(c)).length;
   $('#snap').innerHTML=`<div class="eyebrow">THIS WEEK ・ ${wk}</div>
     <div class="r"><span>水池已寫</span><b>${written}<span class="muted" style="font-size:14px"> / ${ids.length}</span></b></div>
     <div class="r"><span>本週到期</span><b class="${due?'hot':''}">${due}</b></div>
@@ -406,7 +419,7 @@ function renderSnap(){
 }
 function render(){
   const m=TAB_META[TAB]; $('#topEyebrow').innerHTML=esc(m[0]).replace(' / ',' <span>/</span> '); $('#topTitle').textContent=m[1]; $('#topSub').textContent=m[2];
-  ({timeline:renderTimeline,pool:renderPool,atm:renderAtm,cards:renderCards,contracts:renderContracts,import:renderImport})[TAB]();
+  ({timeline:renderTimeline,pool:renderPool,atm:renderAtm,cards:renderCards,release:renderRelease,contracts:renderContracts,import:renderImport})[TAB]();
   renderSnap();
 }
 function toast(msg, err){
@@ -417,7 +430,7 @@ function toast(msg, err){
 /* =========================================================
    卡片存取
    ========================================================= */
-const cardById = id => S.Cards.find(c=>c['卡片ID']===id);
+const cardById = id => S.Cards.find(c=>c['卡片ID']===id) || virtualCards().find(c=>c['卡片ID']===id);
 async function saveCard(c, msg='已儲存'){
   c['更新時間']=nowISO();
   if(DONE.has(c['狀態']) && !c['結案時間']) c['結案時間']=nowISO();
@@ -442,25 +455,27 @@ function renderTimeline(){
   const sc = SCALES[scale];
   const start = addDays(TODAY, -sc.back + tlOffset), end = addDays(start, sc.days);
   const pos = d => (daysBetween(start,d)/sc.days*100);
-  const laneOf = c => lane==='type'?c['卡片類型']: lane==='vendor'?(shortVendor(c['廠商'])||'（無廠商）'):(c['負責人']||'（未指派）');
+  const laneOf = c => lane==='type'?c['卡片類型']: lane==='vendor'?(shortVendor(c['廠商'])||'（無廠商）'):(c._v==='RM'?'版本里程碑':(c['負責人']||'（未指派）'));
 
   const items=[]; let undated=0;
-  S.Cards.forEach(c=>{
+  allCards().forEach(c=>{
     if(hideDone && isDone(c)) return;
     const s=parseD(c['開始日']), e=parseD(c['截止日']);
     if(!s && !e){ undated++; return; }
-    items.push({lane:laneOf(c), type:c['卡片類型'], s, e, label:c['標題'], id:c['卡片ID'], done:isDone(c)});
-  });
-  S.Release_Master.forEach(r=>{
-    const s=parseD(r['預計交版日']), e=parseD(r['預計上線日']); if(!s&&!e) return;
-    if(hideDone && String(r['整體狀態']).includes('已完成')) return;
-    const ln = lane==='type'?'Release': lane==='vendor'?(shortVendor(r['廠商名稱'])||'（無廠商）'):'版本里程碑';
-    items.push({lane:ln, type:'Release', s, e, label:`${r['軟體版號']} ${shortVendor(r['廠商名稱'])} 交版`, rel:r, done:String(r['整體狀態']).includes('已完成')});
+    items.push({lane:laneOf(c), type:c['卡片類型'], s, e, label:c['標題'], id:c['卡片ID'], done:isDone(c), stages:c._stages});
   });
   const visible = items.filter(it=>{ const a=it.s||it.e, b=it.e||it.s; return b>=start && a<=end; });
 
-  const lanes={};
-  visible.forEach(it=>(lanes[it.lane]=lanes[it.lane]||[]).push(it));
+  const lanes={}, dayGroups={};
+  visible.forEach(it=>{
+    const single = !(it.stages&&it.stages.length) && !(it.s && it.e && daysBetween(it.s,it.e)>=1);
+    if(single){ const k=it.lane+'|'+fmtD(it.e||it.s); (dayGroups[k]=dayGroups[k]||[]).push(it); }
+    else (lanes[it.lane]=lanes[it.lane]||[]).push(it);
+  });
+  Object.values(dayGroups).forEach(g=>{
+    const it = g.length===1 ? g[0] : {...g[0], label:`${g.length} 項：${g[0].label}…`, group:g.map(x=>x.id), done:g.every(x=>x.done)};
+    (lanes[it.lane]=lanes[it.lane]||[]).push(it);
+  });
   let order = Object.keys(lanes).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
   if(lane==='type') order = TYPES.filter(t=>lanes[t]);
   order.forEach(k=>lanes[k].sort((a,b)=>((a.s||a.e)-(b.s||b.e))));
@@ -479,8 +494,22 @@ function renderTimeline(){
   for(let d=new Date(start.getFullYear(),start.getMonth()+1,1); d<=end; d=new Date(d.getFullYear(),d.getMonth()+1,1)) grid+=`<div class="tl-grid" style="left:${pos(d)}%"></div>`;
 
   const drawItem = it => {
-    const cls = `c-${esc(it.type)}`, attr = it.id?`data-card="${esc(it.id)}"`:`data-rel="1"`;
+    const cls = `c-${esc(it.type)}`, attr = it.group?`data-group="${esc(it.group.join(','))}"`:(it.id?`data-card="${esc(it.id)}"`:`data-rel="1"`);
     const title = esc(it.label);
+    if(it.stages && it.stages.length){
+      const cur=currentStage(it.stages);
+      const lab=Math.min(Math.max(0,pos(it.s||it.e)),70);
+      let h=`<div class="tl-lbl" ${attr} style="left:${lab}%">${title}${cur?`<span class="muted">｜目前：${esc(cur['作業階段'])}</span>`:''}</div>`;
+      it.stages.forEach(st=>{
+        const a=parseD(st['預計起日']), b=parseD(st['預計迄日'])||a; if(!a||b<start||a>end) return;
+        const tip=esc(`${st['作業階段']}　${md(a)}${fmtD(a)!==fmtD(b)?'–'+md(b):''}　${st['階段狀態']||''}`);
+        const k=`${stageDone(st)?'done':''} ${st===cur?'cur':''} ${stageLate(st)?'late':''}`;
+        if(daysBetween(a,b)>=1){ const l=Math.max(0,pos(a)), r=Math.min(100,pos(addDays(b,1))); h+=`<div class="tl-seg ${cls} ${k}" ${attr} title="${tip}" style="left:${l}%;width:${Math.max(r-l,.4)}%"></div>`; }
+        else h+=`<div class="tl-sdia ${cls} ${k}" ${attr} title="${tip}" style="left:calc(${pos(a)}% - 6px)"></div>`;
+      });
+      if(it.e) h+=`<div class="tl-golive ${cls}" ${attr} title="上線 ${esc(fmtD(it.e))}" style="left:calc(${pos(it.e)}% - 9px)"></div>`;
+      return h;
+    }
     if(it.s && it.e && daysBetween(it.s,it.e)>=1){
       const l=Math.max(0,pos(it.s)), r=Math.min(100,pos(addDays(it.e,1)));
       let h=`<div class="tl-bar ${cls} ${it.done?'done':''}" ${attr} title="${title}" style="left:${l}%;width:${Math.max(r-l,.6)}%">${title}</div>`;
@@ -491,7 +520,17 @@ function renderTimeline(){
     const mark = it.type==='Release' ? 'tl-dia':'tl-dot';
     return `<div class="${mark} ${cls}" ${attr} title="${title}" style="left:calc(${pos(d)}% - 8px);${it.done?'opacity:.5':''}"></div><div class="tl-lbl" ${attr} style="left:calc(${pos(d)}% + 14px)">${md(d)}　${title}</div>`;
   };
-  const lanesHtml = order.map(k=>`<div class="tl-lane"><div class="tl-lname">${esc(k)}<div class="muted" style="font-size:13px;font-weight:400">${lanes[k].length} 項</div></div><div class="tl-track">${grid}${lanes[k].map(it=>`<div class="tl-row">${drawItem(it)}</div>`).join('')}</div></div>`).join('');
+  const trackPx = Math.max(750, (($('#tab-timeline').clientWidth)||1100) - 152);
+  const pxPct = px => px/trackPx*100;
+  const pack = arr => { const rows=[]; arr.forEach(it=>{
+      if(it.stages&&it.stages.length){ rows.push({rel:true,end:999,items:[it]}); return; }
+      const lw=pxPct((String(it.label).length+6)*14.5+24);
+      let x0, x1;
+      if(it.s && it.e && daysBetween(it.s,it.e)>=1){ x0=Math.max(0,pos(it.s)); x1=Math.max(pos(addDays(it.e,1)), x0+lw); }
+      else { x0=pos(it.e||it.s)-1; x1=x0+lw; }
+      const r=rows.find(r=>!r.rel && r.end<x0-0.5); if(r){ r.items.push(it); r.end=x1; } else rows.push({rel:false,end:x1,items:[it]});
+    }); return rows; };
+  const lanesHtml = order.map(k=>`<div class="tl-lane"><div class="tl-lname">${esc(k)}<div class="muted" style="font-size:13px;font-weight:400">${lanes[k].length} 項</div></div><div class="tl-track">${grid}${pack(lanes[k]).map(r=>`<div class="tl-row ${r.rel?'rel':''}">${r.items.map(drawItem).join('')}</div>`).join('')}</div></div>`).join('');
   const todayPos = pos(TODAY);
 
   $('#tab-timeline').innerHTML = `
@@ -507,7 +546,7 @@ function renderTimeline(){
   </div>
   <div class="legend" style="margin-bottom:10px">
     ${TYPES.map(t=>`<span class="tag T-${t}">${t}</span>`).join('')}
-    <span class="muted">長條＝有起訖　●＝單日截止　◆＝版本上線</span>
+    <span class="muted">長條＝有起訖　●＝單日截止　Release 列＝各作業階段，亮框為目前階段，實心◆＝上線</span>
     ${undated?`<span class="muted">・另有 ${undated} 張沒有日期，不顯示</span>`:''}
   </div>
   <div class="tl"><div class="tl-inner">
@@ -524,7 +563,8 @@ function renderTimeline(){
   $('#tlToday').onclick=()=>{tlOffset=0; renderTimeline();};
   $('#hideDone').onchange=e=>{ls.set(LS.hideDone,e.target.checked); renderTimeline();};
   $('#tlNew').onclick=()=>openCard(blankCard());
-  $('#tab-timeline').onclick=e=>{ const el=e.target.closest('[data-card]'); if(el) openCard(cardById(el.dataset.card)); };
+  $('#tab-timeline').onclick=e=>{ const g=e.target.closest('[data-group]'); if(g) return openGroup(g.dataset.group.split(','));
+    const el=e.target.closest('[data-card]'); if(el) openCard(cardById(el.dataset.card)); };
 }
 
 /* =========================================================
@@ -541,7 +581,9 @@ function dueThisWeek(c, wk){
 function renderPool(){
   const wk=CUR_WEEK, ids=poolIds(wk), inPool=new Set(ids);
   const prevIds=new Set(poolIds(shiftWeek(wk,-1)));
-  let lib=S.Cards.filter(c=>!isDone(c) || inPool.has(c['卡片ID']));
+  let lib=allCards().filter(c=>!isDone(c) || inPool.has(c['卡片ID']));
+  const farLimit=addDays(TODAY,42); let farHidden=0;
+  if(libFilter==='all'){ const before=lib.length; lib=lib.filter(c=>inPool.has(c['卡片ID'])||c['卡片類型']!=='定期事項'||!parseD(c['截止日'])||parseD(c['截止日'])<=farLimit); farHidden=before-lib.length; }
   if(libFilter==='carry') lib=lib.filter(c=>prevIds.has(c['卡片ID']) && !isDone(c));
   else if(libFilter==='due') lib=lib.filter(c=>dueThisWeek(c,wk));
   else if(TYPES.includes(libFilter)) lib=lib.filter(c=>c['卡片類型']===libFilter);
@@ -607,6 +649,7 @@ function renderPool(){
       <div class="chips" style="margin-bottom:10px">
         ${[['all','全部'],['carry',`上週未結案${carryMissing?`（${carryMissing}）`:''}`],['due','本週到期'],...TYPES.map(t=>[t,t])].map(([k,t])=>`<button class="chip ${libFilter===k?'on':''}" data-lf="${esc(k)}">${esc(t)}</button>`).join('')}
       </div>
+      ${farHidden?`<div class="muted" style="font-size:14px;margin-bottom:8px">另有 ${farHidden} 張 6 週後才到期的定期卡，點「定期事項」查看</div>`:''}
       <div class="lib" id="lib">${lib.map(miniHtml).join('')||'<div class="muted">沒有符合的卡片</div>'}</div>
     </div>
     <div>
@@ -697,7 +740,9 @@ async function saveProgress(ids){
   if(!rows.length){ toast('沒有需要儲存的變更'); return; }
   renderPool();
   const ok = await persist('saveProgress',{rows});
-  if(cards.length) await persist('saveCards',{rows:cards});
+  const real=cards.filter(c=>!c._v), virt=cards.filter(c=>c._v);
+  if(real.length) await persist('saveCards',{rows:real});
+  for(const c of virt) await saveVirtualStatus(c);
   if(ok) toast(`已儲存 ${rows.length} 張`);
 }
 
@@ -931,7 +976,7 @@ function openTicket(a){
    ========================================================= */
 let cardQ={q:'',type:'',showDone:false};
 function renderCards(){
-  let list=S.Cards.slice();
+  let list=allCards();
   if(!cardQ.showDone) list=list.filter(c=>!isDone(c));
   if(cardQ.type) list=list.filter(c=>c['卡片類型']===cardQ.type);
   if(cardQ.q) list=list.filter(c=>(c['標題']+c['關聯單號']+c['廠商']+c['負責人']+c['描述']).toLowerCase().includes(cardQ.q.toLowerCase()));
@@ -939,7 +984,7 @@ function renderCards(){
   $('#tab-cards').innerHTML=`
   <div class="toolbar">
     <input id="cq" placeholder="搜尋" value="${esc(cardQ.q)}" style="min-width:240px">
-    <div class="chips"><button class="chip ${!cardQ.type?'on':''}" data-ct="">全部</button>${TYPES.map(t=>`<button class="chip ${cardQ.type===t?'on':''}" data-ct="${t}">${t}（${S.Cards.filter(c=>c['卡片類型']===t&&(cardQ.showDone||!isDone(c))).length}）</button>`).join('')}</div>
+    <div class="chips"><button class="chip ${!cardQ.type?'on':''}" data-ct="">全部</button>${TYPES.map(t=>`<button class="chip ${cardQ.type===t?'on':''}" data-ct="${t}">${t}（${allCards().filter(c=>c['卡片類型']===t&&(cardQ.showDone||!isDone(c))).length}）</button>`).join('')}</div>
     <label class="row" style="gap:6px"><input type="checkbox" id="cd" ${cardQ.showDone?'checked':''}> 顯示已完成</label>
     <span class="sp"></span><button class="primary" id="cNew">＋ 新增卡片</button>
   </div>
@@ -959,14 +1004,30 @@ function renderCards(){
   $('#tab-cards').onclick=e=>{const r=e.target.closest('[data-open]'); if(r) openCard(cardById(r.dataset.open));};
 }
 
+function openGroup(ids){
+  const cs=ids.map(cardById).filter(Boolean); const d=parseD(cs[0]['截止日'])||parseD(cs[0]['開始日']);
+  const root=$('#modalRoot');
+  root.innerHTML=`<div class="mask"><div class="modal" style="max-width:640px">
+    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">${esc(fmtD(d))} 到期　${cs.length} 項</h2><span class="sp"></span><button class="ghost" id="mClose">✕</button></div>
+    <table class="list"><tbody>${cs.map(c=>`<tr class="click" data-open="${esc(c['卡片ID'])}"><td><span class="tag T-${esc(c['卡片類型'])}">${esc(c['卡片類型'])}</span></td><td style="font-weight:500">${esc(c['標題'])}<div class="muted" style="font-size:13px">${esc(shortVendor(c['廠商'])||'')}</div></td><td><span class="${stClass(c['狀態'])}">${esc(c['狀態'])}</span></td><td><button class="sm" data-pool="${esc(c['卡片ID'])}">＋ 水池</button></td></tr>`).join('')}</tbody></table>
+  </div></div>`;
+  $('#mClose').onclick=()=>root.innerHTML='';
+  $('.mask',root).onclick=async e=>{
+    if(e.target.classList.contains('mask')) return root.innerHTML='';
+    const pb=e.target.closest('[data-pool]'); if(pb){ CUR_WEEK=workWeek(TODAY); await addToPool(pb.dataset.pool); pb.textContent='已加入'; pb.disabled=true; return; }
+    const o=e.target.closest('[data-open]'); if(o) openCard(cardById(o.dataset.open));
+  };
+}
 function opts(arr, cur){ return arr.map(v=>`<option ${String(v)===String(cur)?'selected':''}>${esc(v)}</option>`).join(''); }
 function openCard(card, isNew){
   if(!card) return;
+  if(card._v==='RM') return openVersion(card._row);
+  if(card._v==='SP') return openSP(card._row);
   const c={...card}; const exists=!!cardById(c['卡片ID']);
   const cats=S.Settings.map(s=>s['區塊分類']).filter(Boolean);
   const vendors=[...new Set(S.Settings.map(s=>s['廠商清單']).filter(Boolean))];
   const people=[...new Set(['Mike',...S['同事名單'].map(p=>p['姓名']).filter(Boolean)])];
-  const vers=S.Release_Master.map(r=>`${r['版本ID']}`).filter((v,i,a)=>a.indexOf(v)===i);
+  const vers=tbl('Release_Master').map(r=>`${r['版本ID']}`).filter((v,i,a)=>a.indexOf(v)===i);
   const history=S.Progress_Log.filter(p=>p['卡片ID']===c['卡片ID']).sort((a,b)=>String(b['週別']).localeCompare(String(a['週別'])));
   const machines=parseJSON(c['機台清單'],[]); const re=reoccur(c);
   const root=$('#modalRoot');
@@ -984,7 +1045,7 @@ function openCard(card, isNew){
       <div><label>開始日</label><input type="date" id="f-開始日" value="${esc(String(c['開始日']).slice(0,10))}"></div>
       <div><label>截止日</label><input type="date" id="f-截止日" value="${esc(String(c['截止日']).slice(0,10))}"></div>
       <div><label>版本ID</label><input id="f-版本ID" list="dl-r" value="${esc(c['版本ID'])}"><datalist id="dl-r">${vers.map(v=>`<option value="${esc(v)}">`).join('')}</datalist></div>
-      <div><label>合約ID</label><input id="f-合約ID" list="dl-c" value="${esc(c['合約ID'])}"><datalist id="dl-c">${S.Contracts.map(k=>`<option value="${esc(k['合約ID'])}">`).join('')}</datalist></div>
+      <div><label>合約ID</label><input id="f-合約ID" list="dl-c" value="${esc(c['合約ID'])}"><datalist id="dl-c">${tbl('合約管理').map(k=>`<option value="${esc(k['列ID'])}">${esc(k['合約名稱'])}</option>`).join('')}</datalist></div>
       ${c['卡片類型']==='維修單'||machines.length?`
       <div><label>故障類別</label><input id="f-故障類別" value="${esc(c['故障類別'])}"></div>
       <div><label>觸發規則</label><input id="f-觸發規則" value="${esc(c['觸發規則'])}"></div>
@@ -1019,102 +1080,395 @@ function openCard(card, isNew){
 }
 
 /* =========================================================
-   合約與定期卡
+   沿用格式的五張表：Release_Master / Release_Stages / 合約管理 / 合約定期事項 / 資安與專案排程
    ========================================================= */
-function holidayMap(){ const m={}; S.Holidays.forEach(h=>{ const d=String(h['日期']).slice(0,10); if(d) m[d]=h['類型']||'假日'; }); return m; }
+const TBL_PREFIX = {'Release_Master':'RM','Release_Stages':'RS','合約管理':'CT','合約定期事項':'CR','資安與專案排程':'SP'};
+const RM_ST = ['未開始','進行中','進行中 (財金跨機構試營運)','已完成','規劃中','規劃中 (待啟動)'];
+const RS_ST = ['未開始','進行中','進行中 (財金跨機構試營運)','待驗收','已完成','延遲','規劃中','規劃中 (待啟動)'];
+const CT_ST = ['履約中','即將到期','已到期'];
+const CR_VENDOR = ['三商電腦','迪堡多富資訊','國眾電腦','行內自維','共通廠商'];
+const CR_SYS_EXTRA = ['共通性維運','開放式系統','自提機及跨行系統'];
+const CR_FREQ = ['每月','每季','每半年','每年','專案里程碑','不定期'];
+const CR_CAT = ['廠商請款','交付文件','資安查核','教育訓練','系統維運','廠商管理','帳號與個資','評估演練'];
+const SP_KIND = ['資安查核','系統維運','教育訓練','廠商管理','評估演練','帳號與個資','專案里程碑','交付文件'];
+const SP_FREQ = ['每月','每季','每半年','每年','不定期','專案里程碑'];
+const SP_ST = ['未開始','進行中','待審核','已完成','例行監控'];
+const ds = v => fmtD(parseD(v));
+const tbl = name => (S[name] = S[name] || []);
+function nextRowId(name){
+  let max=0; tbl(name).forEach(r=>{ const m=String(r['列ID']||'').match(/-(\d+)$/); if(m) max=Math.max(max,Number(m[1])); });
+  return `${TBL_PREFIX[name]}-${String(max+1).padStart(3,'0')}`;
+}
+async function saveRow(name, row, msg){
+  if(!row['列ID']) row['列ID']=nextRowId(name);
+  const arr=tbl(name), i=arr.findIndex(r=>r['列ID']===row['列ID']);
+  if(i>=0) arr[i]=row; else arr.push(row);
+  _vc=null;
+  return persist('saveRows',{sheet:name,rows:[row]},msg);
+}
+async function deleteRows(name, ids, msg){
+  S[name]=tbl(name).filter(r=>!ids.includes(r['列ID'])); _vc=null;
+  return persist('deleteRows',{sheet:name,ids},msg);
+}
+const ROC = d => `${d.getFullYear()-1911}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
+function autoPeriodText(s,e){
+  const a=parseD(s), b=parseD(e); if(!a&&!b) return '';
+  if(!a||!b||fmtD(a)===fmtD(b)) return `${ROC(a||b)} (1 天)`;
+  return `${ROC(a)} - ${ROC(b)} (${daysBetween(a,b)+1} 天)`;
+}
+
+/* ---- 虛擬卡片：Release 版本與資安排程直接由原表產生，狀態寫回原表 ---- */
+let _vc=null;
+const rmToCard = s => { s=String(s||''); return s.includes('已完成')?'已完成':(s.includes('規劃')||s.includes('未開始')||!s)?'待處理':'進行中'; };
+const spToCard = s => ({'未開始':'待處理','待審核':'等回覆','已完成':'已完成'})[s] || (s?'進行中':'待處理');
+function cardToRm(c, cur){ if(rmToCard(cur)===c) return cur; return {已完成:'已完成',待處理:'規劃中',進行中:'進行中',等回覆:'進行中'}[c]||cur; }
+function cardToSp(c, cur){ if(spToCard(cur)===c) return cur; return {已完成:'已完成',待處理:'未開始',進行中:'進行中',等回覆:'待審核'}[c]||cur; }
+const stagesOf = rm => tbl('Release_Stages').filter(s=>String(s['版本ID'])===String(rm['版本ID']) && s['廠商名稱']===rm['廠商名稱'])
+  .sort((a,b)=>(parseD(a['預計起日'])||9e15)-(parseD(b['預計起日'])||9e15));
+function currentStage(stages){
+  return stages.find(s=>{const a=parseD(s['預計起日']), b=parseD(s['預計迄日'])||a; return a && a<=TODAY && TODAY<=b && !String(s['階段狀態']).includes('已完成');})
+      || stages.find(s=>!String(s['階段狀態']).includes('已完成') && (parseD(s['預計起日'])||TODAY)>=TODAY)
+      || stages.find(s=>!String(s['階段狀態']).includes('已完成'));
+}
+function virtualCards(){
+  if(_vc) return _vc;
+  const rm = tbl('Release_Master').filter(r=>r['列ID']).map(r=>{
+    const st=stagesOf(r), starts=st.map(s=>parseD(s['預計起日'])).filter(Boolean);
+    const first=starts.length?new Date(Math.min(...starts)):parseD(r['預計交版日']);
+    return {...Object.fromEntries(CARD_FIELDS.map(f=>[f,''])),
+      卡片ID:'RM:'+r['列ID'], 卡片類型:'Release', 區塊分類:'軟體版本更新', 標題:`${r['軟體版號']} 版更｜${shortVendor(r['廠商名稱'])}（${r['版本ID']}）`,
+      關聯單號:String(r['版本ID']), 廠商:r['廠商名稱'], 狀態:rmToCard(r['整體狀態']), 開始日:fmtD(first), 截止日:ds(r['預計上線日']),
+      版本ID:String(r['版本ID']), 描述:r['備註']||'', 來源:'Release_Master', 來源ID:r['列ID'], _v:'RM', _row:r, _stages:st};
+  });
+  const sp = tbl('資安與專案排程').filter(r=>r['列ID']).map(r=>({...Object.fromEntries(CARD_FIELDS.map(f=>[f,''])),
+      卡片ID:'SP:'+r['列ID'], 卡片類型:'資安專案', 區塊分類:r['事項性質']||'資安合規', 標題:r['作業事項名稱'], 關聯單號:r['檢核代碼']||'',
+      負責人:r['主責同仁']||'', 狀態:spToCard(r['作業階段']), 開始日:ds(r['預計起日']), 截止日:ds(r['預計迄日']),
+      描述:[r['適用範圍/系統'],r['協同人員/股別']&&('協同：'+r['協同人員/股別']),r['交付成果與備註']].filter(Boolean).join('\n'),
+      來源:'資安與專案排程', 來源ID:r['列ID'], _v:'SP', _row:r}));
+  return (_vc = rm.concat(sp));
+}
+const allCards = () => S.Cards.concat(virtualCards());
+async function saveVirtualStatus(c){
+  if(c._v==='RM'){ const r={...c._row, 整體狀態:cardToRm(c['狀態'], c._row['整體狀態'])}; return saveRow('Release_Master', r); }
+  if(c._v==='SP'){ const r={...c._row, 作業階段:cardToSp(c['狀態'], c._row['作業階段'])}; return saveRow('資安與專案排程', r); }
+}
+
+/* ---- 合約與合約季 ---- */
+function addMonths(d,n){ const y=d.getFullYear(), m=d.getMonth()+n; const last=new Date(y,m+1,0).getDate(); return new Date(y,m,Math.min(d.getDate(),last)); }
+function contractMonths(k){
+  const t=String(k['簽約週期']||''); let m=t.match(/(\d+(?:\.\d+)?)\s*年/); if(m) return Math.round(Number(m[1])*12);
+  m=t.match(/(\d+)\s*個?月/); if(m) return Number(m[1]);
+  const a=parseD(k['契約起日']), b=parseD(k['契約迄日']); if(a&&b) return Math.max(1,Math.round(daysBetween(a,b)/30.44));
+  return 24;
+}
+function contractEnd(k){ const e=parseD(k['契約迄日']); if(e) return e; const s=parseD(k['契約起日']); return s?addMonths(s,contractMonths(k)):null; }
+const contractOf = sys => tbl('合約管理').find(k=>k['合約名稱']===sys);
+function contractQuarter(k, d=TODAY){
+  const cs=parseD(k['契約起日']); if(!cs) return null; const n=Math.ceil(contractMonths(k)/3);
+  for(let q=1;q<=n;q++){ const a=addMonths(cs,3*(q-1)), b=addDays(addMonths(cs,3*q),-1); if(d>=a&&d<=b) return {q,a,b,n}; }
+  return null;
+}
+
+/* ---- 產卡規則 ---- */
+function holidayMap(){ const m={}; S.Holidays.forEach(h=>{ const d=ds(h['日期']); if(d) m[d]=h['類型']||'假日'; }); return m; }
 function isWorkday(d, hm){ const k=fmtD(d); if(hm[k]==='補班') return true; if(hm[k]) return false; const w=d.getDay(); return w!==0&&w!==6; }
 function prevWorkday(d, hm){ let x=new Date(d); for(let i=0;i<20&&!isWorkday(x,hm);i++) x=addDays(x,-1); return x; }
 function dayIn(y,m,day){ const last=new Date(y,m+1,0).getDate(); return new Date(y,m, day==='末'?last:Math.min(Number(day),last)); }
-/** 依規則列出 from 起的候選日期，回傳 [{date, period}] */
-function ruleDates(rule, from, until, anchorYear){
-  const out=[]; const r=String(rule||'').trim().toUpperCase().replace('：',':'); const p=r.split(':');
+const normRule = r => String(r||'').trim().toUpperCase().replace(/：/g,':').replace(/\s/g,'');
+function validRule(rule){ return /^(W:[1-7]|M:(\d{1,2}|末)|Q:(\d{1,2}|末)|Q:[1-3]:(\d{1,2}|末)|H:(\d{1,2}|末)|Y:[\d,]+:(\d{1,2}|末)|2Y:[\d,]+:(\d{1,2}|末)|CQ:(\*|[\d,]+):(末|\+\d+)|ONCE:\+\d+)$/.test(normRule(rule)); }
+const needsContract = rule => /^(CQ|ONCE|2Y):/.test(normRule(rule));
+/** 回傳 [{date, period}]；ctx 提供合約起日與月數 */
+function ruleDates(rule, from, until, ctx={}){
+  const out=[]; const r=normRule(rule); const p=r.split(':');
   const push=(d,per)=>{ if(d>=from && d<=until) out.push({date:d,period:per}); };
   const y0=from.getFullYear(), y1=until.getFullYear();
   if(p[0]==='W'){ const wd=Number(p[1])%7; let d=addDays(from,(wd-from.getDay()+7)%7); for(;d<=until;d=addDays(d,7)) push(d,workWeek(d)); }
-  else if(p[0]==='M'){ for(let y=y0;y<=y1;y++) for(let m=0;m<12;m++) push(dayIn(y,m,p[1]==='末'?'末':p[1]),`${y}-${pad(m+1)}`); }
-  else if(p[0]==='Q'){ const mi=p.length>=3?Number(p[1]):3, day=p.length>=3?p[2]:p[1]; for(let y=y0;y<=y1;y++) for(let q=0;q<4;q++) push(dayIn(y,q*3+mi-1,day==='末'?'末':day),`${y}-Q${q+1}`); }
+  else if(p[0]==='M'){ for(let y=y0;y<=y1;y++) for(let m=0;m<12;m++) push(dayIn(y,m,p[1]),`${y}-${pad(m+1)}`); }
+  else if(p[0]==='Q'){ const mi=p.length>=3?Number(p[1]):3, day=p.length>=3?p[2]:p[1]; for(let y=y0;y<=y1;y++) for(let q=0;q<4;q++) push(dayIn(y,q*3+mi-1,day),`${y}-Q${q+1}`); }
   else if(p[0]==='H'){ const day=p[1]||'末'; for(let y=y0;y<=y1;y++){ push(dayIn(y,5,day),`${y}-H1`); push(dayIn(y,11,day),`${y}-H2`); } }
-  else if(p[0]==='Y'||p[0]==='2Y'){ const months=String(p[1]||'').split(',').map(Number).filter(Boolean), day=p[2]||'末';
-    for(let y=y0;y<=y1;y++){ if(p[0]==='2Y' && (y-anchorYear)%2!==0) continue; months.forEach(m=>push(dayIn(y,m-1,day),months.length>1?`${y}-${pad(m)}`:`${y}`)); } }
+  else if(p[0]==='Y'||p[0]==='2Y'){ const months=String(p[1]||'').split(',').map(Number).filter(Boolean), day=p[2]||'末', anchor=ctx.cs?ctx.cs.getFullYear():y0;
+    for(let y=y0;y<=y1;y++){ if(p[0]==='2Y' && (y-anchor)%2!==0) continue; months.forEach(m=>push(dayIn(y,m-1,day),months.length>1?`${y}-${pad(m)}`:`${y}`)); } }
+  else if(p[0]==='CQ' && ctx.cs){ const n=Math.ceil((ctx.months||24)/3), list=p[1]==='*'?null:p[1].split(',').map(Number);
+    for(let q=1;q<=n;q++){ if(list && !list.includes(q)) continue; const qe=addDays(addMonths(ctx.cs,3*q),-1); push(p[2]==='末'?qe:addDays(qe,Number(p[2].slice(1))),`合約Q${q}`); } }
+  else if(p[0]==='ONCE' && ctx.cs){ push(addDays(ctx.cs,Number(p[1].slice(1))),'一次性'); }
   return out.sort((a,b)=>a.date-b.date);
 }
-function validRule(rule){ return /^(W:[1-7]|M:(\d{1,2}|末)|Q:(\d{1,2}|末)|Q:[1-3]:(\d{1,2}|末)|H:(\d{1,2}|末)|Y:[\d,]+:(\d{1,2}|末)|2Y:[\d,]+:(\d{1,2}|末))$/.test(String(rule||'').trim().toUpperCase().replace('：',':')); }
+const crEnabled = r => !(r['啟用監控']===false || String(r['啟用監控']).toUpperCase()==='FALSE');
+/** 某一筆合約定期事項接下來 n 期的截止日（已遇假日提前） */
+function nextDues(r, n=3){
+  const rule=r['產卡規則']; if(!validRule(rule)) return {list:[], err: rule?'規則格式錯誤':''};
+  const k=contractOf(r['合約系統']);
+  if(needsContract(rule) && !k) return {list:[], err:'找不到對應合約（合約系統需與合約名稱相同）'};
+  const cs=k?parseD(k['契約起日']):null, ce=k?contractEnd(k):null, hm=holidayMap();
+  const from=new Date(Math.max(cs||0, addDays(TODAY,-7)));
+  const isCQ=/^(CQ|ONCE)/.test(normRule(rule));
+  const until=isCQ?addDays(TODAY,365*6):new Date(Math.min(ce||addDays(TODAY,365*5), addDays(TODAY,365*5)));
+  const list=ruleDates(rule, from, until, {cs, months:k?contractMonths(k):24}).map(x=>({...x, due:prevWorkday(x.date,hm)})).filter(x=>x.due>=addDays(TODAY,-7)).slice(0,n);
+  return {list, k};
+}
 async function genRecurring(silent){
-  const hm=holidayMap(), have=new Set(S.Cards.map(c=>c['來源']+'|'+c['來源ID'])), add=[];
-  S.Contracts.forEach(k=>{
-    const obls=parseJSON(k['定期義務'],[]); if(!Array.isArray(obls)) return;
-    const cs=parseD(k['起日'])||new Date(TODAY.getFullYear()-1,0,1), ce=parseD(k['迄日'])||addDays(TODAY,3650);
-    const from=new Date(Math.max(cs, addDays(TODAY,-7))), until=new Date(Math.min(ce, addDays(TODAY,365*5)));
-    obls.forEach(o=>{
-      if(!validRule(o['規則'])) return;
-      ruleDates(o['規則'],from,addDays(until,7),cs.getFullYear()).filter(x=>x.date<=ce).slice(0,3).forEach(x=>{
-        const due=prevWorkday(x.date,hm), sid=`${k['合約ID']}|${o['項目']}|${x.period}`;
-        if(have.has('合約|'+sid)) return; have.add('合約|'+sid);
-        add.push(blankCard({卡片類型:'定期事項',標題:`${o['項目']}（${x.period}）`,廠商:k['廠商']||'',負責人:o['負責人']||'',
-          截止日:fmtD(due),合約ID:k['合約ID'],來源:'合約',來源ID:sid,期別:x.period,
-          描述:`${k['合約名稱']}・規則 ${o['規則']}${fmtD(due)!==fmtD(x.date)?`・原訂 ${fmtD(x.date)} 遇假日提前`:''}`}));
-      });
+  const have=new Set(S.Cards.map(c=>c['來源']+'|'+c['來源ID'])), add=[];
+  tbl('合約定期事項').forEach(r=>{
+    if(!crEnabled(r) || !r['列ID']) return;
+    const {list,k}=nextDues(r,3);
+    list.forEach(x=>{
+      const sid=`${r['列ID']}|${x.period}`; if(have.has('合約定期|'+sid)) return; have.add('合約定期|'+sid);
+      const moved=fmtD(x.due)!==fmtD(x.date);
+      add.push(blankCard({卡片類型:'定期事項',區塊分類:r['項目分類']||'',標題:`${r['應辦事項名稱']}（${x.period}）`,
+        廠商:['行內自維','共通廠商'].includes(r['負責廠商'])?'':(r['負責廠商']||''),截止日:fmtD(x.due),合約ID:k?k['列ID']:'',
+        來源:'合約定期',來源ID:sid,期別:x.period,
+        描述:[`${r['合約系統']||''}｜${r['執行時程']||''}｜規則 ${r['產卡規則']}${moved?`｜原訂 ${fmtD(x.date)} 遇假日提前`:''}`,
+              r['交付文件與查核表單']&&('交付：'+r['交付文件與查核表單']), r['權責分工']&&('權責：'+r['權責分工']), r['檢核說明與罰則要點']].filter(Boolean).join('\n')}));
     });
   });
   if(add.length){ S.Cards.push(...add); await persist('importCards',{rows:add}, silent?`已自動產生 ${add.length} 張定期卡`:null); }
   if(!silent) toast(add.length?`新增 ${add.length} 張定期卡`:'定期卡都已是最新，沒有新增');
   return add.length;
 }
-function renderContracts(){
-  $('#tab-contracts').innerHTML=`
-  <div class="toolbar"><h2 style="margin:0">合約與定期義務</h2><span class="muted">每條義務自動維持「未來 3 期」卡片，遇假日提前到前一個工作日</span><span class="sp"></span>
-    <button id="genRec">更新定期卡</button><button class="primary" id="kNew">＋ 新增合約</button></div>
-  <div class="two">
-    <div class="panel" style="overflow-x:auto"><table class="list"><thead><tr><th>合約</th><th>廠商</th><th>期間</th><th>定期義務</th></tr></thead><tbody>
-      ${S.Contracts.map(k=>{const ob=parseJSON(k['定期義務'],[])||[]; return `<tr class="click" data-k="${esc(k['合約ID'])}"><td><b>${esc(k['合約名稱'])}</b><div class="mono muted">${esc(k['合約ID'])}</div></td><td>${esc(shortVendor(k['廠商']))}</td><td class="mono" style="white-space:nowrap">${esc(String(k['起日']).slice(0,10))}<br>${esc(String(k['迄日']).slice(0,10))}</td><td>${ob.map(o=>`<div>${esc(o['項目'])} <span class="mono muted">${esc(o['規則'])}</span>${validRule(o['規則'])?'':' <span class="unsaved">規則格式錯誤</span>'}</div>`).join('')}</td></tr>`;}).join('')||'<tr><td colspan="4" class="muted">還沒有合約，按「新增合約」或用匯入</td></tr>'}
-    </tbody></table></div>
-    <div class="panel"><h3>規則寫法</h3><table class="list"><tbody>
-      ${[['W:3','每週三（1=週一…7=週日）'],['M:5','每月 5 日'],['M:末','每月最後一天'],['Q:末','每季最後一天'],['Q:1:10','每季第 1 個月 10 日'],['H:末','每半年（6/30、12/31）'],['Y:1,7:15','每年 1 月與 7 月 15 日'],['Y:12:末','每年 12 月最後一天'],['2Y:11:30','每兩年 11/30（從合約起日那年起算）']].map(([a,b])=>`<tr><td class="mono" style="white-space:nowrap">${a}</td><td>${b}</td></tr>`).join('')}
-    </tbody></table>
-    <div class="muted" style="font-size:14px;margin-top:8px">假日依「Holidays」分頁，週六日自動視為假日，標「補班」的日子視為工作日。目前收錄 ${S.Holidays.length} 筆。</div></div>
-  </div>`;
-  $('#genRec').onclick=async()=>{ await genRecurring(false); render(); };
-  $('#kNew').onclick=()=>openContract({合約ID:'K-'+Math.random().toString(36).slice(2,7).toUpperCase(),合約名稱:'',廠商:'',起日:'',迄日:'',定期義務:'[]',備註:''},true);
-  $('#tab-contracts').onclick=e=>{const r=e.target.closest('[data-k]'); if(r) openContract(S.Contracts.find(k=>k['合約ID']===r.dataset.k));};
+
+/* ---- 共用：表單 ---- */
+function fieldHtml(f){
+  const id=`x-${f.k}`, v=f.v??'';
+  let inp;
+  if(f.type==='select') inp=`<select id="${id}">${f.blank?'<option></option>':''}${opts(f.options, v)}${f.options.includes(String(v))||!v?'':`<option selected>${esc(v)}</option>`}</select>`;
+  else if(f.type==='textarea') inp=`<textarea id="${id}" rows="${f.rows||3}">${esc(v)}</textarea>`;
+  else if(f.type==='check') inp=`<label class="row" style="gap:8px;font-size:15px"><input type="checkbox" id="${id}" ${v?'checked':''}> ${esc(f.text||'')}</label>`;
+  else inp=`<input id="${id}" ${f.type==='date'?'type="date"':''} ${f.list?`list="dl-${f.k}"`:''} class="${f.mono?'mono':''}" value="${esc(f.type==='date'?ds(v):v)}" ${f.ro?'readonly':''} placeholder="${esc(f.ph||'')}">${f.list?`<datalist id="dl-${f.k}">${f.list.map(o=>`<option value="${esc(o)}">`).join('')}</datalist>`:''}`;
+  return `<div class="${f.full?'full':''}"><label>${esc(f.label||f.k)}${f.req?' <span class="req">*</span>':''}</label>${inp}${f.hint?`<div class="muted" style="font-size:13px;margin-top:3px" id="hint-${f.k}">${f.hint}</div>`:''}</div>`;
 }
-function openContract(k,isNew){
-  const ob=(parseJSON(k['定期義務'],[])||[]).slice();
+function readFields(fields, row){
+  fields.forEach(f=>{ const el=$('#x-'+f.k); if(!el||f.ro) return; row[f.k]= f.type==='check'?el.checked:el.value.trim(); });
+  return row;
+}
+function formModal({title, sub, fields, extra='', onSave, onDelete, saveText='儲存'}){
   const root=$('#modalRoot');
-  const draw=()=>{
-    root.innerHTML=`<div class="mask"><div class="modal">
-      <div class="row" style="margin-bottom:12px"><h2 style="margin:0">${isNew?'新增合約':'編輯合約'}</h2><span class="sp"></span><button class="ghost" id="mClose">✕</button></div>
-      <div class="form">
-        <div><label>合約ID <span class="req">*</span></label><input id="k-合約ID" value="${esc(k['合約ID'])}" ${isNew?'':'readonly'}></div>
-        <div><label>廠商</label><input id="k-廠商" value="${esc(k['廠商'])}"></div>
-        <div class="full"><label>合約名稱 <span class="req">*</span></label><input id="k-合約名稱" value="${esc(k['合約名稱'])}"></div>
-        <div><label>起日</label><input type="date" id="k-起日" value="${esc(String(k['起日']).slice(0,10))}"></div>
-        <div><label>迄日</label><input type="date" id="k-迄日" value="${esc(String(k['迄日']).slice(0,10))}"></div>
-        <div class="full"><label>定期義務</label>
-          ${ob.map((o,i)=>`<div class="row" style="margin-bottom:6px"><input data-i="${i}" data-k="項目" value="${esc(o['項目'])}" placeholder="月保養報告" style="flex:2"><input class="mono" data-i="${i}" data-k="規則" value="${esc(o['規則'])}" placeholder="M:5" style="flex:1"><input data-i="${i}" data-k="負責人" value="${esc(o['負責人'])}" placeholder="負責人" style="flex:1"><button class="sm ghost" data-del="${i}">✕</button></div>`).join('')}
-          <button class="sm" id="obAdd">＋ 新增一條義務</button></div>
-        <div class="full"><label>備註</label><textarea id="k-備註" rows="2">${esc(k['備註'])}</textarea></div>
-      </div>
-      <div class="row" style="margin-top:16px"><span class="sp"></span><button class="primary" id="kSave">儲存並更新定期卡</button></div>
-    </div></div>`;
-    $('#mClose').onclick=()=>root.innerHTML='';
-    $('#obAdd').onclick=()=>{ sync(); ob.push({項目:'',規則:'',負責人:''}); draw(); };
-    $$('[data-del]',root).forEach(b=>b.onclick=()=>{ sync(); ob.splice(Number(b.dataset.del),1); draw(); });
-    $('#kSave').onclick=async()=>{
-      sync();
-      ['合約ID','廠商','合約名稱','起日','迄日','備註'].forEach(f=>k[f]=$('#k-'+f).value.trim());
-      if(!k['合約ID']||!k['合約名稱']){ toast('合約ID 與合約名稱必填',true); return; }
-      const clean=ob.filter(o=>o['項目']&&o['規則']);
-      const bad=clean.filter(o=>!validRule(o['規則'])); if(bad.length){ toast(`規則格式錯誤：${bad.map(o=>o['規則']).join('、')}`,true); return; }
-      if(isNew && S.Contracts.some(x=>x['合約ID']===k['合約ID'])){ toast('合約ID 已存在',true); return; }
-      k['定期義務']=JSON.stringify(clean);
-      const i=S.Contracts.findIndex(x=>x['合約ID']===k['合約ID']); if(i>=0) S.Contracts[i]=k; else S.Contracts.push(k);
-      root.innerHTML='';
-      await persist('saveContracts',{rows:[k]},'合約已儲存');
-      await genRecurring(false); render();
-    };
+  root.innerHTML=`<div class="mask"><div class="modal">
+    <div class="row" style="margin-bottom:12px"><div><h2 style="margin:0">${esc(title)}</h2>${sub?`<div class="muted" style="font-size:14px">${sub}</div>`:''}</div><span class="sp"></span><button class="ghost" id="mClose">✕</button></div>
+    <div class="form">${fields.map(fieldHtml).join('')}</div>${extra}
+    <div class="row" style="margin-top:16px">${onDelete?'<button class="danger" id="mDel">刪除</button>':''}<span class="sp"></span><button class="primary" id="mSave">${esc(saveText)}</button></div>
+  </div></div>`;
+  const close=()=>root.innerHTML='';
+  $('#mClose').onclick=close; $('.mask',root).onclick=e=>{ if(e.target.classList.contains('mask')) close(); };
+  $('#mSave').onclick=async()=>{ const ok=await onSave(close); if(ok!==false){ close(); render(); } };
+  if(onDelete) $('#mDel').onclick=async()=>{ if(await onDelete()!==false){ close(); render(); } };
+  return root;
+}
+const vendorList = () => [...new Set(S.Settings.map(s=>s['廠商清單']).filter(Boolean))];
+const peopleList = () => [...new Set(['Mike',...S['同事名單'].map(p=>p['姓名']).filter(Boolean)])];
+
+/* =========================================================
+   版本與排程分頁
+   ========================================================= */
+let relShowDone=false;
+function stageDone(s){ return String(s['階段狀態']).includes('已完成'); }
+function stageLate(s){ const e=parseD(s['預計迄日'])||parseD(s['預計起日']); return !stageDone(s) && e && e<TODAY; }
+function renderRelease(){
+  const groups=new Map();
+  tbl('Release_Master').forEach(r=>{ const k=String(r['版本ID']); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(r); });
+  let keys=[...groups.keys()].sort((a,b)=>(parseD(groups.get(b)[0]['預計上線日'])||0)-(parseD(groups.get(a)[0]['預計上線日'])||0));
+  if(!relShowDone) keys=keys.filter(k=>groups.get(k).some(r=>!String(r['整體狀態']).includes('已完成')));
+  const sp=tbl('資安與專案排程').slice().sort((a,b)=>(parseD(a['預計起日'])||9e15)-(parseD(b['預計起日'])||9e15));
+  const verHtml=k=>{ const rows=groups.get(k), r0=rows[0];
+    return `<div class="panel" style="margin-bottom:14px">
+      <div class="row"><div><div class="eyebrow">VERSION ${esc(k)}</div><h3 style="margin:4px 0 0">${esc(r0['出版性質']||'版本')}　<span class="mono muted">交版 ${esc(ds(r0['預計交版日']))} → 上線 ${esc(ds(r0['預計上線日']))}</span></h3></div><span class="sp"></span><span class="muted mono" style="font-size:13px">${esc(r0['涵蓋單號清單']||'')}</span></div>
+      ${rows.map(r=>{ const st=stagesOf(r), done=st.filter(stageDone).length, cur=currentStage(st);
+        return `<details style="margin-top:12px;border-top:1px solid var(--line2);padding-top:10px">
+          <summary class="row" style="list-style:none">
+            <span class="tag T-Release">${esc(r['軟體版號'])}</span><b>${esc(shortVendor(r['廠商名稱']))}</b>
+            <span class="${stClass(rmToCard(r['整體狀態']))}">${esc(r['整體狀態']||'')}</span>
+            <span class="muted" style="font-size:14px">階段 ${done}/${st.length}${cur?`・目前：${esc(cur['作業階段'])}`:''}</span>${st.filter(stageLate).length?`<span style="color:var(--danger);font-size:14px;font-weight:700">⚠ ${st.filter(stageLate).length} 個階段過期未完成</span>`:''}
+            <span class="sp"></span>
+            <button class="sm" data-rmedit="${esc(r['列ID'])}">編輯版本</button><button class="sm" data-rsadd="${esc(r['列ID'])}">＋ 階段</button>
+          </summary>
+          <table class="list" style="margin-top:8px"><thead><tr><th>作業階段</th><th>期程</th><th>狀態</th><th>跨科協同與備註</th></tr></thead><tbody>
+          ${st.map(s=>`<tr class="click" data-rs="${esc(s['列ID'])}"><td style="font-weight:500">${esc(s['作業階段'])}</td><td class="mono" style="white-space:nowrap">${esc(ds(s['預計起日'])||'—')}${s['預計迄日']&&ds(s['預計迄日'])!==ds(s['預計起日'])?'<br>'+esc(ds(s['預計迄日'])):''}<div class="muted" style="font-size:13px">${esc(s['基準期程']||'')}</div></td><td><span class="${stageDone(s)?'st done':(String(s['階段狀態']).includes('進行')?'st wait':'st')}">${esc(s['階段狀態']||'')}</span>${stageLate(s)?'<div style="color:var(--danger);font-size:13px;font-weight:700;margin-top:3px">⚠ 已過期程</div>':''}</td><td style="font-size:14px">${esc(s['跨科協同與備註']||'')}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">還沒有階段</td></tr>'}
+          </tbody></table></details>`; }).join('')}
+    </div>`; };
+  $('#tab-release').innerHTML=`
+  <div class="toolbar"><h2 style="margin:0">Release 版本與階段</h2><span class="muted">${tbl('Release_Master').length} 個版本列・${tbl('Release_Stages').length} 個階段</span>
+    <label class="row" style="gap:6px"><input type="checkbox" id="relDone" ${relShowDone?'checked':''}> 顯示已完成版本</label><span class="sp"></span>
+    <button class="primary" id="rmNew">＋ 新增版本</button></div>
+  ${keys.map(verHtml).join('')||'<div class="panel muted">沒有進行中的版本</div>'}
+  <div class="toolbar" style="margin-top:24px"><h2 style="margin:0">資安與專案排程</h2><span class="muted">${sp.length} 項，每項自動成為一張資安專案卡</span><span class="sp"></span><button class="primary" id="spNew">＋ 新增排程</button></div>
+  <div class="panel" style="overflow-x:auto"><table class="list"><thead><tr><th>檢核代碼</th><th>作業事項</th><th>性質</th><th>主責</th><th>週期</th><th>期間</th><th>階段</th></tr></thead><tbody>
+    ${sp.map(r=>`<tr class="click" data-sp="${esc(r['列ID'])}"><td class="mono">${esc(r['檢核代碼']||'')}</td><td style="font-weight:500">${esc(r['作業事項名稱'])}<div class="muted" style="font-size:13px">${esc(r['適用範圍/系統']||'')}</div></td><td>${esc(r['事項性質']||'')}</td><td>${esc(r['主責同仁']||'')}</td><td>${esc(r['週期頻率']||'')}</td><td class="mono" style="white-space:nowrap">${esc(ds(r['預計起日']))}<br>${esc(ds(r['預計迄日']))}</td><td><span class="${stClass(spToCard(r['作業階段']))}">${esc(r['作業階段']||'')}</span></td></tr>`).join('')||'<tr><td colspan="7" class="muted">還沒有排程，按「新增排程」</td></tr>'}
+  </tbody></table></div>`;
+  $('#relDone').onchange=e=>{relShowDone=e.target.checked; renderRelease();};
+  $('#rmNew').onclick=()=>openVersion({},true);
+  $('#spNew').onclick=()=>openSP({},true);
+  $('#tab-release').onclick=e=>{
+    const a=e.target.closest('[data-rmedit]'), b=e.target.closest('[data-rsadd]'), s=e.target.closest('[data-rs]'), p=e.target.closest('[data-sp]');
+    if(a){ e.preventDefault(); openVersion(tbl('Release_Master').find(r=>r['列ID']===a.dataset.rmedit)); }
+    else if(b){ e.preventDefault(); const rm=tbl('Release_Master').find(r=>r['列ID']===b.dataset.rsadd); openStage({版本ID:rm['版本ID'],廠商名稱:rm['廠商名稱'],軟體版本:rm['軟體版號'],階段狀態:'未開始'},true); }
+    else if(s) openStage(tbl('Release_Stages').find(r=>r['列ID']===s.dataset.rs));
+    else if(p) openSP(tbl('資安與專案排程').find(r=>r['列ID']===p.dataset.sp));
   };
-  const sync=()=>$$('[data-i]',root).forEach(el=>{ ob[Number(el.dataset.i)][el.dataset.k]=el.value.trim(); });
-  draw();
+}
+function openVersion(row, isNew){
+  const r={...row};
+  const combos=tbl('Release_Master').filter(x=>stagesOf(x).length).map(x=>`${x['版本ID']}｜${x['廠商名稱']}｜${x['軟體版號']}`);
+  const fields=[
+    {k:'版本ID',req:1,v:r['版本ID'],ph:'1160215',mono:1},{k:'廠商名稱',type:'select',options:vendorList(),v:r['廠商名稱']},
+    {k:'軟體版號',req:1,v:r['軟體版號'],ph:'5.02'},{k:'出版性質',v:r['出版性質'],list:['例行增修更版','緊急修正','專案更版']},
+    {k:'涵蓋單號清單',full:1,v:r['涵蓋單號清單'],ph:'ATM116-0215, SEC-2027-01'},
+    {k:'預計交版日',type:'date',v:r['預計交版日']},{k:'預計上線日',type:'date',v:r['預計上線日']},
+    {k:'整體狀態',type:'select',options:RM_ST,v:r['整體狀態']||'規劃中'},{k:'備註',type:'textarea',full:1,v:r['備註']}];
+  const st=isNew?[]:stagesOf(r);
+  formModal({title:isNew?'新增版本':'編輯版本', sub:isNew?'':`${esc(r['列ID'])}・${st.length} 個階段`, fields,
+    extra: isNew&&combos.length?`<div style="margin-top:12px"><label class="label">複製階段自（日期與備註一起複製，狀態改為未開始）</label><select id="x-copy" style="width:100%"><option value="">不複製</option>${combos.map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`:'',
+    onSave: async()=>{
+      readFields(fields,r);
+      if(!r['版本ID']||!r['軟體版號']){ toast('版本ID 與軟體版號必填',true); return false; }
+      if(isNew && tbl('Release_Master').some(x=>String(x['版本ID'])===String(r['版本ID'])&&x['廠商名稱']===r['廠商名稱'])){ toast('這個版本ID＋廠商已存在',true); return false; }
+      const old=row['版本ID']!==undefined?{...row}:null;
+      await saveRow('Release_Master', r, isNew?'已新增版本':'版本已儲存');
+      // 版本ID／廠商改了，階段跟著改
+      if(old && (String(old['版本ID'])!==String(r['版本ID'])||old['廠商名稱']!==r['廠商名稱'])){
+        for(const s of st){ await saveRow('Release_Stages',{...s,版本ID:r['版本ID'],廠商名稱:r['廠商名稱'],軟體版本:r['軟體版號']}); }
+      }
+      const cp=$('#x-copy'); if(cp && cp.value){
+        const [vid,ven]=cp.value.split('｜'); const src=tbl('Release_Stages').filter(s=>String(s['版本ID'])===vid&&s['廠商名稱']===ven);
+        for(const s of src){ const n={...s}; delete n['列ID']; Object.assign(n,{版本ID:r['版本ID'],廠商名稱:r['廠商名稱'],軟體版本:r['軟體版號'],階段狀態:'未開始'}); await saveRow('Release_Stages',n); }
+        toast(`已複製 ${src.length} 個階段`);
+      }
+    },
+    onDelete: isNew?null:async()=>{
+      if(!confirm(`刪除版本「${r['軟體版號']} ${r['廠商名稱']}」${st.length?`，並一併刪除它的 ${st.length} 個階段`:''}？此動作無法復原。`)) return false;
+      if(st.length) await deleteRows('Release_Stages', st.map(s=>s['列ID']));
+      await deleteRows('Release_Master',[r['列ID']],'已刪除版本');
+    }});
+}
+function openStage(row, isNew){
+  const r={...row};
+  const fields=[
+    {k:'版本ID',v:r['版本ID'],ro:1,mono:1},{k:'廠商名稱',v:r['廠商名稱'],ro:1},
+    {k:'作業階段',req:1,full:1,v:r['作業階段'],ph:'M5 程式代碼完全凍結 (Code Freeze)'},
+    {k:'預計起日',type:'date',v:r['預計起日']},{k:'預計迄日',type:'date',v:r['預計迄日']},
+    {k:'基準期程',v:r['基準期程'],hint:'留空或沒改過的話，會依起迄日自動產生（民國年）'},{k:'階段狀態',type:'select',options:RS_ST,v:r['階段狀態']||'未開始'},
+    {k:'跨科協同與備註',type:'textarea',full:1,v:r['跨科協同與備註']}];
+  const root=formModal({title:isNew?'新增階段':'編輯階段', sub:`${esc(r['軟體版本']||'')}`, fields,
+    onSave: async()=>{
+      const before=autoPeriodText(r['預計起日'],r['預計迄日']), prevText=r['基準期程'];
+      readFields(fields,r);
+      if(!r['作業階段']){ toast('作業階段必填',true); return false; }
+      if(ds(r['預計起日'])&&ds(r['預計迄日'])&&ds(r['預計起日'])>ds(r['預計迄日'])){ toast('起日不能晚於迄日',true); return false; }
+      if(!r['基準期程'] || r['基準期程']===prevText&&prevText===before) r['基準期程']=autoPeriodText(r['預計起日'],r['預計迄日']);
+      await saveRow('Release_Stages', r, isNew?'已新增階段':'階段已儲存');
+    },
+    onDelete: isNew?null:async()=>{ if(!confirm(`刪除階段「${r['作業階段']}」？`)) return false; await deleteRows('Release_Stages',[r['列ID']],'已刪除階段'); }});
+}
+function openSP(row, isNew){
+  const r={...row};
+  const fields=[
+    {k:'檢核代碼',v:r['檢核代碼'],mono:1,ph:'SEC-2027-01'},{k:'事項性質',type:'select',blank:1,options:SP_KIND,v:r['事項性質']},
+    {k:'作業事項名稱',req:1,full:1,v:r['作業事項名稱']},{k:'適用範圍/系統',full:1,v:r['適用範圍/系統']},
+    {k:'主責同仁',v:r['主責同仁'],list:peopleList()},{k:'協同人員/股別',v:r['協同人員/股別']},
+    {k:'週期頻率',type:'select',blank:1,options:SP_FREQ,v:r['週期頻率']},{k:'作業階段',type:'select',options:SP_ST,v:r['作業階段']||'未開始'},
+    {k:'預計起日',type:'date',v:r['預計起日']},{k:'預計迄日',type:'date',v:r['預計迄日']},
+    {k:'交付成果與備註',type:'textarea',full:1,v:r['交付成果與備註']}];
+  formModal({title:isNew?'新增資安與專案排程':'編輯資安與專案排程', fields,
+    onSave: async()=>{ readFields(fields,r); if(!r['作業事項名稱']){ toast('作業事項名稱必填',true); return false; }
+      if(ds(r['預計起日'])&&ds(r['預計迄日'])&&ds(r['預計起日'])>ds(r['預計迄日'])){ toast('起日不能晚於迄日',true); return false; }
+      await saveRow('資安與專案排程', r, isNew?'已新增排程':'排程已儲存'); },
+    onDelete: isNew?null:async()=>{ if(!confirm(`刪除「${r['作業事項名稱']}」？卡片的歷週進度紀錄會保留。`)) return false; await deleteRows('資安與專案排程',[r['列ID']],'已刪除'); }});
+}
+
+/* =========================================================
+   合約與定期分頁
+   ========================================================= */
+let crVendor='';
+const RULE_HELP=[['CQ:*:末','每個合約季的最後一天（依契約起日起算，2 年共 8 季）'],['CQ:4,8:+15','合約第 4、8 季結束後 15 天'],['CQ:4,8:末','合約第 4、8 季最後一天'],['ONCE:+30','契約起日後 30 天（一次性）'],
+  ['M:25','每月 25 日'],['M:末','每月最後一天'],['Q:末','日曆季最後一天（3/31、6/30…）'],['H:末','每半年（6/30、12/31）'],['Y:4,10:末','每年 4 月與 10 月底'],['Y:3:末','每年 3 月底'],['W:3','每週三'],['2Y:11:30','每兩年 11/30'],['（空白）','不定期，不自動產卡']];
+function renderContracts(){
+  const cts=tbl('合約管理');
+  let crs=tbl('合約定期事項').slice().sort((a,b)=>Number(a['項次']||999)-Number(b['項次']||999));
+  const vendors=[...new Set(crs.map(r=>r['負責廠商']).filter(Boolean))];
+  if(crVendor) crs=crs.filter(r=>r['負責廠商']===crVendor);
+  $('#tab-contracts').innerHTML=`
+  <div class="toolbar"><h2 style="margin:0">合約管理</h2><span class="muted">${cts.length} 份</span><span class="sp"></span><button class="primary" id="ctNew">＋ 新增合約</button></div>
+  <div class="panel" style="overflow-x:auto;margin-bottom:22px"><table class="list"><thead><tr><th>項次</th><th>合約</th><th>廠商／團隊</th><th>契約期間</th><th>剩餘天數</th><th>目前合約季</th><th>狀態</th></tr></thead><tbody>
+    ${cts.map(k=>{ const e=contractEnd(k), left=e?daysBetween(TODAY,e):null, q=contractQuarter(k);
+      return `<tr class="click" data-ct="${esc(k['列ID'])}"><td>${esc(k['項次']||'')}</td><td style="font-weight:500">${esc(k['合約名稱'])}<div class="muted" style="font-size:13px">${esc(k['簽約週期']||'')}</div></td><td>${esc(shortVendor(k['廠商名稱']))}<div class="muted" style="font-size:13px">${esc(k['維護團隊']||'')}</div></td>
+        <td class="mono" style="white-space:nowrap">${esc(ds(k['契約起日']))}<br>${esc(fmtD(e))}</td>
+        <td class="mono" style="font-weight:700;color:${left===null?'inherit':left<0?'var(--danger)':left<90?'var(--warn)':'var(--ok)'}">${left===null?'—':left+' 天'}</td>
+        <td>${q?`<b>合約 Q${q.q}</b><span class="muted">／${q.n}</span><div class="mono muted" style="font-size:13px">${md(q.a)}–${md(q.b)}</div>`:'<span class="muted">—</span>'}</td>
+        <td><span class="${k['合約狀態']==='履約中'?'st done':'st wait'}">${esc(k['合約狀態']||'')}</span></td></tr>`; }).join('')||'<tr><td colspan="7" class="muted">還沒有合約</td></tr>'}
+  </tbody></table></div>
+  <div class="toolbar"><h2 style="margin:0">合約定期事項</h2><span class="muted">有產卡規則且啟用監控的項目，自動維持未來 3 期定期卡，遇假日提前</span><span class="sp"></span>
+    <button id="genRec">更新定期卡</button><button class="primary" id="crNew">＋ 新增事項</button></div>
+  <div class="chips" style="margin-bottom:10px"><button class="chip ${!crVendor?'on':''}" data-crv="">全部（${tbl('合約定期事項').length}）</button>${vendors.map(v=>`<button class="chip ${crVendor===v?'on':''}" data-crv="${esc(v)}">${esc(v)}（${tbl('合約定期事項').filter(r=>r['負責廠商']===v).length}）</button>`).join('')}</div>
+  <div class="panel" style="overflow-x:auto"><table class="list"><thead><tr><th>項次</th><th>應辦事項</th><th>分類</th><th>週期／執行時程</th><th>產卡規則</th><th>接下來</th><th>監控</th></tr></thead><tbody>
+    ${crs.map(r=>{ const nd=nextDues(r,2), on=crEnabled(r);
+      return `<tr class="click" data-cr="${esc(r['列ID'])}" style="${on?'':'opacity:.5'}"><td>${esc(r['項次']||'')}</td>
+        <td style="font-weight:500">${esc(r['應辦事項名稱'])}<div class="muted" style="font-size:13px">${esc(r['負責廠商']||'')}・${esc(r['合約系統']||'')}</div></td>
+        <td>${esc(r['項目分類']||'')}</td><td>${esc(r['週期頻率']||'')}<div class="muted" style="font-size:13px">${esc(r['執行時程']||'')}</div></td>
+        <td class="mono">${r['產卡規則']?esc(r['產卡規則']):'<span class="muted">手動</span>'}${nd.err?`<div class="unsaved" style="font-family:inherit">${esc(nd.err)}</div>`:''}</td>
+        <td class="mono" style="white-space:nowrap;font-size:14px">${nd.list.map(x=>`${fmtD(x.due).slice(2)} <span class="muted">${esc(x.period)}</span>`).join('<br>')||'<span class="muted">—</span>'}</td>
+        <td><input type="checkbox" data-crtoggle="${esc(r['列ID'])}" ${on?'checked':''} title="啟用監控"></td></tr>`; }).join('')}
+  </tbody></table></div>
+  <details class="panel" style="margin-top:14px"><summary class="label">產卡規則寫法</summary><table class="list" style="margin-top:8px"><tbody>
+    ${RULE_HELP.map(([a,b])=>`<tr><td class="mono" style="white-space:nowrap">${a}</td><td>${b}</td></tr>`).join('')}
+  </tbody></table><div class="muted" style="font-size:14px;margin-top:8px">假日依「Holidays」分頁，週六日自動視為假日，標「補班」的日子視為工作日。目前收錄 ${S.Holidays.length} 筆。</div></details>`;
+  $('#ctNew').onclick=()=>openCT({簽約週期:'2年',合約狀態:'履約中',項次:cts.length+1},true);
+  $('#crNew').onclick=()=>openCR({項次:tbl('合約定期事項').length+1,啟用監控:true,負責廠商:crVendor||''},true);
+  $('#genRec').onclick=async()=>{ await genRecurring(false); render(); };
+  $$('[data-crv]').forEach(b=>b.onclick=()=>{crVendor=b.dataset.crv; renderContracts();});
+  $('#tab-contracts').onclick=e=>{
+    if(e.target.closest('[data-crtoggle]')) return;
+    const c=e.target.closest('[data-ct]'), r=e.target.closest('[data-cr]');
+    if(c) openCT(tbl('合約管理').find(k=>k['列ID']===c.dataset.ct));
+    else if(r) openCR(tbl('合約定期事項').find(k=>k['列ID']===r.dataset.cr));
+  };
+  $('#tab-contracts').onchange=async e=>{ const t=e.target.closest('[data-crtoggle]'); if(!t) return;
+    const r={...tbl('合約定期事項').find(k=>k['列ID']===t.dataset.crtoggle), 啟用監控:t.checked};
+    await saveRow('合約定期事項', r, t.checked?'已啟用監控':'已停用監控'); if(t.checked) await genRecurring(true); renderContracts(); };
+}
+function openCT(row, isNew){
+  const r={...row}, oldName=row['合約名稱'];
+  const linked=isNew?[]:tbl('合約定期事項').filter(x=>x['合約系統']===oldName);
+  const fields=[
+    {k:'項次',v:r['項次'],mono:1},{k:'廠商名稱',type:'select',options:vendorList(),v:r['廠商名稱']},
+    {k:'合約名稱',req:1,full:1,v:r['合約名稱'],hint:linked.length?`有 ${linked.length} 項合約定期事項連到這份合約；改名時會一併更新它們的「合約系統」`:''},
+    {k:'維護團隊',v:r['維護團隊'],list:['ATM','DMS']},{k:'簽約週期',v:r['簽約週期'],ph:'2年'},
+    {k:'契約起日',type:'date',v:r['契約起日'],req:1},{k:'契約迄日',type:'date',v:contractEnd(r)?fmtD(contractEnd(r)):'',ro:1,hint:'由試算表公式 EDATE(起日, 24) 自動計算'},
+    {k:'合約狀態',type:'select',options:CT_ST,v:r['合約狀態']||'履約中'},{k:'備註',type:'textarea',full:1,v:r['備註']}];
+  formModal({title:isNew?'新增合約':'編輯合約', sub:isNew?'':esc(r['列ID']), fields,
+    onSave: async()=>{
+      readFields(fields,r);
+      if(!r['合約名稱']||!ds(r['契約起日'])){ toast('合約名稱與契約起日必填',true); return false; }
+      if(tbl('合約管理').some(x=>x['合約名稱']===r['合約名稱']&&x['列ID']!==r['列ID'])){ toast('已有同名合約',true); return false; }
+      r['契約迄日']=fmtD(addMonths(parseD(r['契約起日']),contractMonths(r)));
+      await saveRow('合約管理', r, isNew?'已新增合約':'合約已儲存');
+      if(!isNew && oldName!==r['合約名稱'] && linked.length){ for(const x of linked) await saveRow('合約定期事項',{...x,合約系統:r['合約名稱']}); toast(`已同步更新 ${linked.length} 項定期事項`); }
+      await genRecurring(true);
+    },
+    onDelete: isNew?null:async()=>{ if(!confirm(`刪除合約「${r['合約名稱']}」？${linked.length?`有 ${linked.length} 項定期事項連到它，刪除後它們的合約季規則將無法產卡。`:''}`)) return false; await deleteRows('合約管理',[r['列ID']],'已刪除合約'); }});
+}
+function openCR(row, isNew){
+  const r={...row};
+  const sysList=[...new Set([...tbl('合約管理').map(k=>k['合約名稱']),...CR_SYS_EXTRA])];
+  const fields=[
+    {k:'項次',v:r['項次'],mono:1},{k:'負責廠商',type:'select',blank:1,options:CR_VENDOR,v:r['負責廠商']},
+    {k:'合約系統',type:'select',blank:1,full:1,options:sysList,v:r['合約系統'],hint:'選合約名稱才能用合約季規則（CQ、ONCE）'},
+    {k:'應辦事項名稱',req:1,full:1,v:r['應辦事項名稱']},
+    {k:'週期頻率',type:'select',blank:1,options:CR_FREQ,v:r['週期頻率']},{k:'執行時程',v:r['執行時程'],ph:'Q1~Q8 每季'},
+    {k:'項目分類',type:'select',blank:1,options:CR_CAT,v:r['項目分類']},{k:'權責分工',v:r['權責分工'],ph:'系統負責人 / 三商電腦'},
+    {k:'產卡規則',v:r['產卡規則'],mono:1,ph:'CQ:*:末',hint:'&nbsp;'},{k:'啟用監控',type:'check',v:crEnabled(r),text:'自動產生定期卡'},
+    {k:'交付文件與查核表單',type:'textarea',full:1,rows:2,v:r['交付文件與查核表單']},
+    {k:'檢核說明與罰則要點',type:'textarea',full:1,rows:3,v:r['檢核說明與罰則要點']}];
+  const root=formModal({title:isNew?'新增合約定期事項':'編輯合約定期事項', sub:isNew?'':`${esc(r['列ID'])}${r['關聯合約狀態']?'・'+esc(r['關聯合約狀態']):''}`, fields,
+    onSave: async()=>{ readFields(fields,r);
+      if(!r['應辦事項名稱']){ toast('應辦事項名稱必填',true); return false; }
+      if(r['產卡規則'] && !validRule(r['產卡規則'])){ toast('產卡規則格式錯誤，請參考下方寫法',true); return false; }
+      if(r['產卡規則']) r['產卡規則']=normRule(r['產卡規則']);
+      await saveRow('合約定期事項', r, isNew?'已新增事項':'事項已儲存'); await genRecurring(true); },
+    onDelete: isNew?null:async()=>{ if(!confirm(`刪除「${r['應辦事項名稱']}」？已產生的定期卡會保留。`)) return false; await deleteRows('合約定期事項',[r['列ID']],'已刪除'); }});
+  const preview=()=>{ const tmp={...r, 合約系統:$('#x-合約系統').value, 產卡規則:$('#x-產卡規則').value};
+    const h=$('#hint-產卡規則'); if(!tmp['產卡規則']){ h.innerHTML='空白＝不自動產卡'; return; }
+    if(!validRule(tmp['產卡規則'])){ h.innerHTML='<span class="unsaved">格式錯誤，例如 CQ:*:末、M:25、Y:4,10:末</span>'; return; }
+    const nd=nextDues(tmp,3); h.innerHTML=nd.err?`<span class="unsaved">${esc(nd.err)}</span>`:('接下來：'+(nd.list.map(x=>`${fmtD(x.due)}（${esc(x.period)}）`).join('、')||'無'));
+  };
+  $('#x-產卡規則').oninput=preview; $('#x-合約系統').onchange=preview; preview();
 }
 
 /* =========================================================
@@ -1123,7 +1477,7 @@ function openContract(k,isNew){
 const AI_PROMPT = `請把我貼上的文字轉成「工作水池」可匯入的 JSON。只輸出 JSON 本身，不要任何說明或 Markdown 程式碼框。
 
 【輸出格式】
-{"cards":[...], "contracts":[...]}　沒有的部分給空陣列。
+{"cards":[...]}
 
 【cards 每筆欄位】（全部用字串）
 - 卡片類型：專案｜資安專案｜定期事項｜Release｜維修單（判斷不出來用「專案」）
@@ -1137,27 +1491,21 @@ const AI_PROMPT = `請把我貼上的文字轉成「工作水池」可匯入的 
 - 來源：資料出處，例如「主管交辦」「會議紀錄」「雜事系統」「Email」
 - 來源ID：原系統的唯一編號；沒有就用「來源縮寫-日期-序號」，例如 MAIL-20261110-01。同一件事每次轉換必須產生相同的來源ID
 
-【contracts 每筆欄位】
-合約ID、合約名稱、廠商、起日、迄日（YYYY-MM-DD）、備註、定期義務（陣列，每筆 {"項目","規則","負責人"}）
-
-【規則寫法】
-W:3=每週三(1週一…7週日)｜M:5=每月5日｜M:末=每月最後一天｜Q:末=每季最後一天｜Q:1:10=每季第1個月10日｜H:末=每半年底｜Y:1,7:15=每年1月與7月15日｜Y:12:末=每年12月底｜2Y:11:30=每兩年11月30日
-
 【注意】
 - 不要編造原文沒有的日期、單號、人名；不確定就留空
 - 一件事一張卡，不要把不同事項合併
 
 以下是要轉換的文字：
 `;
-const TEMPLATE = {cards:[{卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：跨行轉帳戶名列印位置調整',關聯單號:'RQ100000000',廠商:'三商電腦',負責人:'宏全',狀態:'進行中',開始日:'2026-11-10',截止日:'2026-12-15',版本ID:'',描述:'',來源:'主管交辦',來源ID:'MAIL-20261110-01'}],
-  contracts:[{合約ID:'K-範例-01',合約名稱:'範例：ATM 維護合約',廠商:'迪堡多富資訊',起日:'2026-01-01',迄日:'2027-12-31',備註:'',定期義務:[{項目:'月保養報告',規則:'M:5',負責人:'鼎傑'},{項目:'季 SLA 檢討',規則:'Q:末',負責人:'宏全'}]}]};
+const TEMPLATE = {cards:[{卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：跨行轉帳戶名列印位置調整',關聯單號:'RQ100000000',廠商:'三商電腦',負責人:'宏全',狀態:'進行中',開始日:'2026-11-10',截止日:'2026-12-15',版本ID:'',描述:'',來源:'主管交辦',來源ID:'MAIL-20261110-01'}]
+};
 let IMP=null;
 function renderImport(){
   $('#tab-import').innerHTML=`
   <div class="two">
     <div class="panel">
       <h3>貼上 JSON 或選擇檔案</h3>
-      <textarea id="impText" rows="14" class="mono" placeholder='{"cards":[...],"contracts":[...]}'></textarea>
+      <textarea id="impText" rows="14" class="mono" placeholder='{"cards":[...]}'></textarea>
       <div class="row" style="margin-top:8px"><input type="file" id="impFile" accept=".json,application/json"><span class="sp"></span><button class="primary" id="impCheck">檢查並預覽</button></div>
       <div id="impPrev" style="margin-top:14px"></div>
     </div>
@@ -1165,11 +1513,11 @@ function renderImport(){
       <h3>產生 JSON 的方式</h3>
       <ol style="margin:0 0 12px;padding-left:20px">
         <li>按「複製 AI 轉 JSON 提示詞」，貼到 Gemini 或 Claude</li>
-        <li>在提示詞後面貼上會議紀錄、Email、合約條文，或雜事系統／其他系統匯出的內容</li>
+        <li>在提示詞後面貼上會議紀錄、Email，或雜事系統／其他系統匯出的內容</li>
         <li>把 AI 回覆的 JSON 貼到左邊，按「檢查並預覽」</li>
       </ol>
       <div class="row"><button id="cpAi">複製 AI 轉 JSON 提示詞</button><button id="cpTpl">複製 JSON 範本</button></div>
-      <div class="warnbox" style="margin-top:12px">重複判斷：同一個「來源＋來源ID」已存在就跳過，不會更新舊卡；沒有來源ID 的卡片以標題判斷。合約以合約ID 判斷。</div>
+      <div class="warnbox" style="margin-top:12px">重複判斷：同一個「來源＋來源ID」已存在就跳過，不會更新舊卡；沒有來源ID 的卡片以標題判斷。合約、版本、資安排程請到各自分頁直接編輯。</div>
       <div class="muted" style="font-size:14px">ATM 故障不需要匯入，網頁會直接讀取 ATM Tracker；需要追蹤的請到「ATM 參考」開立維修單。</div>
     </div>
   </div>`;
@@ -1181,7 +1529,7 @@ function renderImport(){
 function checkImport(){
   const box=$('#impPrev'); let raw=$('#impText').value.trim().replace(/^```(json)?/i,'').replace(/```$/,'').trim();
   let j; try{ j=JSON.parse(raw); }catch(e){ box.innerHTML=`<div class="warnbox">JSON 格式錯誤：${esc(e.message)}</div>`; return; }
-  const cardsIn = Array.isArray(j)?j:(j.cards||[]), contractsIn = Array.isArray(j)?[]:(j.contracts||[]);
+  const cardsIn = Array.isArray(j)?j:(j.cards||[]), contractsIn = [];
   const have=new Set(S.Cards.map(c=>c['來源']+'|'+c['來源ID'])), seen=new Set();
   const res={add:[],skip:[],err:[],kAdd:[],kSkip:[]};
   cardsIn.forEach((o,i)=>{
@@ -1200,7 +1548,7 @@ function checkImport(){
   contractsIn.forEach(k=>{
     const kk={合約ID:String(k['合約ID']||'').trim(),合約名稱:String(k['合約名稱']||'').trim(),廠商:k['廠商']||'',起日:k['起日']||'',迄日:k['迄日']||'',備註:k['備註']||'',定期義務:JSON.stringify(Array.isArray(k['定期義務'])?k['定期義務']:parseJSON(k['定期義務'],[]))};
     if(!kk['合約ID']||!kk['合約名稱']) res.err.push({i:'合約',msg:'合約缺少合約ID或名稱'});
-    else if(S.Contracts.some(x=>x['合約ID']===kk['合約ID'])) res.kSkip.push(kk); else res.kAdd.push(kk);
+    else res.kAdd.push(kk);
   });
   IMP=res;
   box.innerHTML=`<div class="row" style="margin-bottom:8px">
@@ -1219,10 +1567,9 @@ function checkImport(){
 }
 async function doImport(){
   if(!IMP) return; const rows=IMP.add.map(x=>x.c), ks=IMP.kAdd;
-  S.Cards.push(...rows); S.Contracts.push(...ks);
+  S.Cards.push(...rows);
   if(rows.length) await persist('importCards',{rows});
-  if(ks.length) await persist('saveContracts',{rows:ks});
-  const n = ks.length ? await genRecurring(true) : 0;
+  const n = 0;
   toast(`已匯入 ${rows.length} 張卡片${ks.length?`、${ks.length} 份合約`:''}${n?`，並產生 ${n} 張定期卡`:''}`);
   IMP=null; $('#impText').value=''; $('#impPrev').innerHTML='';
 }
@@ -1254,21 +1601,30 @@ function demoData(){
   const C=(o)=>blankCard({來源:'示範',...o});
   const cards=[
     C({卡片ID:'D-01',卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：交易明細表欄位調整',關聯單號:'RQ-DEMO-001',廠商:'三商電腦',負責人:'宏全',狀態:'進行中',開始日:d(-20),截止日:d(25)}),
-    C({卡片ID:'D-02',卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：查詢報表新增欄位',關聯單號:'RQ-DEMO-001',廠商:'三商電腦',負責人:'宏全',狀態:'等回覆',截止日:d(3)}),
-    C({卡片ID:'D-03',卡片類型:'資安專案',區塊分類:'資安合規',標題:'[演練] 範例：年度系統復原演練',關聯單號:'SEC-DEMO',負責人:'玫鈺',狀態:'進行中',開始日:d(-5),截止日:d(30)}),
-    C({卡片ID:'D-04',卡片類型:'Release',區塊分類:'軟體版本更新',標題:'範例 9.01 版整合測試',版本ID:'DEMO-V9',關聯單號:'DEMO-V9',廠商:'國眾電腦',負責人:'Mike',狀態:'進行中',開始日:d(-3),截止日:d(14)}),
+    C({卡片ID:'D-02',卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：查詢報表新增欄位',關聯單號:'RQ-DEMO-001',廠商:'三商電腦',負責人:'宏全',狀態:'等回覆',截止日:d(1)}),
     C({卡片ID:'D-05',卡片類型:'維修單',區塊分類:'硬體維護',標題:'[維修單] 範例：甲廠商臉部辨識跨局反覆失敗',關聯單號:'RT-DEMO',廠商:'迪堡多富資訊',負責人:'Mike',狀態:'觀察期',開始日:d(-12),
       更新時間:addDays(TODAY,-6).toISOString(),故障類別:'臉部辨識',觸發規則:'1a 同廠商跨機台 60 天同類 ≥3 次',來源:'ATM',來源ID:'ATM-1a-DEMO',
       機台清單:JSON.stringify([{machine:'900001-1J1',branch:'範例甲局',model:'DN200AT'},{machine:'900002-1J1',branch:'範例乙局',model:'DN200AT'}])})
   ];
+  const stg=(id,ven,ver,list)=>list.map(([n,a,b,st],i)=>({版本ID:id,廠商名稱:ven,軟體版本:ver,作業階段:n,基準期程:autoPeriodText(d(a),d(b)),預計起日:d(a),預計迄日:d(b),階段狀態:st,跨科協同與備註:'範例備註',列ID:`RS-${ven==='三商電腦'?'1':'2'}${String(i+1).padStart(2,'0')}`}));
+  const plan=[['M1 說明會與規格確認',-30,-30,'已完成'],['M2 前期驗收',-20,-8,'已完成'],['M3 廠商自測',-6,4,'進行中'],['M4 業務功能驗證',5,12,'未開始'],['M5 代碼凍結',20,20,'未開始'],['M6 白名單軟派測試',24,26,'未開始'],['M7 試營運',30,34,'未開始']];
   return {
     Cards:cards,
     Progress_Log:[{週別:pw,卡片ID:'D-01',狀態:'進行中',本週進展:'已與廠商確認欄位規格，待提供測試版。',風險與協同:'',下週預計:'收到測試版後進行單元測試。',寫入時間:nowISO()}],
-    Weekly_Pool:[{週別:pw,卡片ID:'D-01',排序:1},{週別:pw,卡片ID:'D-02',排序:2},{週別:wk,卡片ID:'D-03',排序:1}],
+    Weekly_Pool:[{週別:pw,卡片ID:'D-01',排序:1},{週別:pw,卡片ID:'D-02',排序:2},{週別:wk,卡片ID:'SP:SP-001',排序:1}],
     Report_History:[],
-    Contracts:[{合約ID:'K-DEMO',合約名稱:'範例：ATM 維護合約',廠商:'迪堡多富資訊',起日:d(-200),迄日:d(500),備註:'',定期義務:JSON.stringify([{項目:'月保養報告',規則:'M:5',負責人:'鼎傑'},{項目:'季 SLA 檢討',規則:'Q:末',負責人:'宏全'}])}],
     Holidays:[{日期:'2026-12-25',名稱:'行憲紀念日',類型:'假日'},{日期:'2027-01-01',名稱:'開國紀念日',類型:'假日'}],
-    Release_Master:[{版本ID:'DEMO-V9',廠商名稱:'國眾電腦',軟體版號:'9.01',預計交版日:d(10),預計上線日:d(24),整體狀態:'進行中'}],
+    Release_Master:[
+      {版本ID:'DEMO-V9',廠商名稱:'三商電腦',軟體版號:'9.01',出版性質:'例行增修更版',涵蓋單號清單:'DEMO-01',預計交版日:d(36),預計上線日:d(40),整體狀態:'進行中',備註:'範例版本',列ID:'RM-001'},
+      {版本ID:'DEMO-V9',廠商名稱:'國眾電腦',軟體版號:'3.01',出版性質:'例行增修更版',涵蓋單號清單:'DEMO-01',預計交版日:d(36),預計上線日:d(40),整體狀態:'規劃中',備註:'範例版本',列ID:'RM-002'}],
+    Release_Stages:stg('DEMO-V9','三商電腦','9.01',plan).concat(stg('DEMO-V9','國眾電腦','3.01',plan.map(x=>[x[0],x[1]+2,x[2]+2,x[3]]))),
+    '合約管理':[{項次:1,廠商名稱:'迪堡多富資訊',維護團隊:'ATM',合約名稱:'範例：自動櫃員機軟體增修',簽約週期:'2年',契約起日:d(-500),契約迄日:fmtD(addMonths(addDays(TODAY,-500),24)),合約狀態:'履約中',備註:'',列ID:'CT-001'}],
+    '合約定期事項':[
+      {項次:1,負責廠商:'迪堡多富資訊',合約系統:'範例：自動櫃員機軟體增修',週期頻率:'每季',執行時程:'Q1~Q8 每季',應辦事項名稱:'季度請款與工時審核',項目分類:'廠商請款',權責分工:'系統負責人 / 迪堡多富資訊',交付文件與查核表單:'增修服務彙總清單',檢核說明與罰則要點:'按季核算服務工時',關聯合約狀態:'履約中',啟用監控:true,產卡規則:'CQ:*:末',列ID:'CR-001'},
+      {項次:2,負責廠商:'迪堡多富資訊',合約系統:'範例：自動櫃員機軟體增修',週期頻率:'每年',執行時程:'第4季及第8季後15日內',應辦事項名稱:'廠商資安教育訓練佐證',項目分類:'教育訓練',權責分工:'系統負責人',交付文件與查核表單:'訓練簽到表',檢核說明與罰則要點:'',關聯合約狀態:'履約中',啟用監控:true,產卡規則:'CQ:4,8:+15',列ID:'CR-002'},
+      {項次:3,負責廠商:'行內自維',合約系統:'共通性維運',週期頻率:'每月',執行時程:'每月25日前',應辦事項名稱:'作業系統弱點修補',項目分類:'系統維運',權責分工:'系統負責人',交付文件與查核表單:'通報及需求單',檢核說明與罰則要點:'',關聯合約狀態:'內部維運',啟用監控:true,產卡規則:'M:25',列ID:'CR-003'},
+      {項次:4,負責廠商:'共通廠商',合約系統:'共通性維運',週期頻率:'不定期',執行時程:'人員異動時',應辦事項名稱:'廠商人員保密切結書',項目分類:'交付文件',權責分工:'系統負責人',交付文件與查核表單:'',檢核說明與罰則要點:'',關聯合約狀態:'內部維運',啟用監控:true,產卡規則:'',列ID:'CR-004'}],
+    '資安與專案排程':[{檢核代碼:'SEC-DEMO',作業事項名稱:'範例：年度系統復原演練',事項性質:'評估演練','適用範圍/系統':'範例系統',主責同仁:'玫鈺','協同人員/股別':'系統管理科',週期頻率:'每年',預計起日:d(-5),預計迄日:d(30),作業階段:'進行中',交付成果與備註:'演練計畫與檢討紀錄',列ID:'SP-001'}],
     Settings:[{廠商清單:'三商電腦',區塊分類:'硬體維護'},{廠商清單:'國眾電腦',區塊分類:'軟體版本更新'},{廠商清單:'迪堡多富資訊',區塊分類:'資安合規'}],
     '同事名單':[{姓名:'宏全'},{姓名:'玫鈺'},{姓名:'鼎傑'}]
   };
