@@ -451,11 +451,12 @@ function blankCard(over={}){
 const SCALES = { week:{days:42,back:10,label:'週'}, month:{days:120,back:21,label:'月'}, quarter:{days:365,back:45,label:'季'} };
 let tlOffset = 0;
 function renderTimeline(){
-  const lane = ls.get(LS.lane,'type'), scale = ls.get(LS.scale,'month'), hideDone = ls.get(LS.hideDone,false);
+  const lane = ls.get(LS.lane,'vendor'), scale = ls.get(LS.scale,'month'), hideDone = ls.get(LS.hideDone,false);
   const sc = SCALES[scale];
   const start = addDays(TODAY, -sc.back + tlOffset), end = addDays(start, sc.days);
   const pos = d => (daysBetween(start,d)/sc.days*100);
-  const laneOf = c => lane==='type'?c['卡片類型']: lane==='vendor'?(shortVendor(c['廠商'])||'（無廠商）'):(c._v==='RM'?'版本里程碑':(c['負責人']||'（未指派）'));
+  const vendLane = c => { const v=shortVendor(c['廠商']); if(!v) return '（無廠商）'; const t=teamOfCard(c); return t?`${v}｜${t}`:(vendorTeams(c['廠商']).length>1||tbl('合約管理').filter(k=>k['廠商名稱']===c['廠商']).length>1?`${v}｜未指定團隊`:v); };
+  const laneOf = c => lane==='type'?c['卡片類型']: lane==='vendor'?vendLane(c):(c._v==='RM'?'版本里程碑':(c['負責人']||'（未指派）'));
 
   const items=[]; let undated=0;
   allCards().forEach(c=>{
@@ -536,7 +537,7 @@ function renderTimeline(){
   $('#tab-timeline').innerHTML = `
   <div class="toolbar">
     <span class="label">泳道</span>
-    <div class="seg" id="laneSeg">${[['type','卡片類型'],['vendor','廠商'],['owner','負責人']].map(([k,t])=>`<button data-k="${k}" class="${lane===k?'on':''}">${t}</button>`).join('')}</div>
+    <div class="seg" id="laneSeg">${[['vendor','廠商｜團隊'],['type','卡片類型'],['owner','負責人']].map(([k,t])=>`<button data-k="${k}" class="${lane===k?'on':''}">${t}</button>`).join('')}</div>
     <span class="label" style="margin-left:8px">尺度</span>
     <div class="seg" id="scaleSeg">${Object.entries(SCALES).map(([k,v])=>`<button data-k="${k}" class="${scale===k?'on':''}">${v.label}</button>`).join('')}</div>
     <button class="sm" id="tlPrev">◀</button><button class="sm" id="tlToday">今天</button><button class="sm" id="tlNext">▶</button>
@@ -754,7 +755,7 @@ function buildReport(wk){
   // 先版本、再 RQ：有版本ID的卡歸入「◆ 版本」，其下依關聯單號(RQ)聚合；沒有版本的維持「◆ RQ」
   const verLabel = ver => {
     const rms=tbl('Release_Master').filter(r=>String(r['版本ID'])===ver);
-    const names=rms.map(r=>`${r['軟體版號']}（${shortVendor(r['廠商名稱'])}）`).filter(Boolean).join('、');
+    const names=rms.map(r=>{const t=teamOfCard({廠商:r['廠商名稱'],合約ID:r['合約ID'],_v:'RM',_row:r}); return `${r['軟體版號']}（${shortVendor(r['廠商名稱'])}${t?' '+t:''}）`;}).join('、');
     return `版本 ${ver}${names?'　'+names:''}`;
   };
   const sec = field => {
@@ -1063,7 +1064,7 @@ function openCard(card, isNew){
       <div><label>開始日</label><input type="date" id="f-開始日" value="${esc(String(c['開始日']).slice(0,10))}"></div>
       <div><label>截止日</label><input type="date" id="f-截止日" value="${esc(String(c['截止日']).slice(0,10))}"></div>
       <div><label>版本ID</label><input id="f-版本ID" list="dl-r" value="${esc(c['版本ID'])}"><datalist id="dl-r">${vers.map(v=>`<option value="${esc(v)}">`).join('')}</datalist></div>
-      <div><label>合約ID</label><input id="f-合約ID" list="dl-c" value="${esc(c['合約ID'])}"><datalist id="dl-c">${tbl('合約管理').map(k=>`<option value="${esc(k['列ID'])}">${esc(k['合約名稱'])}</option>`).join('')}</datalist></div>
+      <div><label>合約ID</label><input id="f-合約ID" list="dl-c" value="${esc(c['合約ID'])}"><datalist id="dl-c">${tbl('合約管理').map(k=>`<option value="${esc(k['列ID'])}">${esc(shortVendor(k['廠商名稱']))} ${esc(k['維護團隊']||'')}｜${esc(k['合約名稱'])}</option>`).join('')}</datalist></div>
       ${c['卡片類型']==='維修單'||machines.length?`
       <div><label>故障類別</label><input id="f-故障類別" value="${esc(c['故障類別'])}"></div>
       <div><label>觸發規則</label><input id="f-觸發規則" value="${esc(c['觸發規則'])}"></div>
@@ -1155,8 +1156,9 @@ function virtualCards(){
   const rm = tbl('Release_Master').filter(r=>r['列ID']).map(r=>{
     const st=stagesOf(r), starts=st.map(s=>parseD(s['預計起日'])).filter(Boolean);
     const first=starts.length?new Date(Math.min(...starts)):parseD(r['預計交版日']);
+    const tm=teamOfCard({廠商:r['廠商名稱'],合約ID:r['合約ID'],_v:'RM',_row:r});
     return {...Object.fromEntries(CARD_FIELDS.map(f=>[f,''])),
-      卡片ID:'RM:'+r['列ID'], 卡片類型:'Release', 區塊分類:'軟體版本更新', 標題:`${r['軟體版號']} 版更｜${shortVendor(r['廠商名稱'])}（${r['版本ID']}）`,
+      卡片ID:'RM:'+r['列ID'], 卡片類型:'Release', 區塊分類:'軟體版本更新', 標題:`${r['軟體版號']} 版更｜${shortVendor(r['廠商名稱'])}${tm?' '+tm:''}（${r['版本ID']}）`, 合約ID:String(r['合約ID']||''),
       關聯單號:String(r['版本ID']), 廠商:r['廠商名稱'], 狀態:rmToCard(r['整體狀態']), 開始日:fmtD(first), 截止日:ds(r['預計上線日']),
       版本ID:String(r['版本ID']), 描述:r['備註']||'', 來源:'Release_Master', 來源ID:r['列ID'], _v:'RM', _row:r, _stages:st};
   });
@@ -1166,6 +1168,16 @@ function virtualCards(){
       描述:[r['適用範圍/系統'],r['協同人員/股別']&&('協同：'+r['協同人員/股別']),r['交付成果與備註']].filter(Boolean).join('\n'),
       來源:'資安與專案排程', 來源ID:r['列ID'], _v:'SP', _row:r}));
   return (_vc = rm.concat(sp));
+}
+/* ---- 維護團隊（ATM／DMS）：由合約管理的「維護團隊」帶出 ---- */
+function teamOfContract(id){ const k=tbl('合約管理').find(x=>String(x['列ID'])===String(id)); return k?String(k['維護團隊']||'').trim():''; }
+function vendorTeams(v){ return [...new Set(tbl('合約管理').filter(k=>k['廠商名稱']===v).map(k=>String(k['維護團隊']||'').trim()).filter(Boolean))]; }
+function teamOfCard(c){
+  const row=c._row||{};
+  let t=teamOfContract(c['合約ID']||row['合約ID']||'');
+  if(!t){ const ts=vendorTeams(String(c['廠商']||row['廠商名稱']||'').trim()); if(ts.length===1) t=ts[0]; }          // 該廠商只有一種團隊
+  if(!t && c._v==='RM'){ const s=String(row['涵蓋單號清單']||'').toUpperCase(); const ts=vendorTeams(row['廠商名稱']); const g=ts.find(x=>s.includes(x.toUpperCase())); if(g) t=g; } // 涵蓋單號含 ATM／DMS
+  return t;
 }
 const allCards = () => S.Cards.concat(virtualCards());
 async function saveVirtualStatus(c){
@@ -1305,7 +1317,7 @@ function renderRelease(){
       ${rows.map(r=>{ const st=stagesOf(r), done=st.filter(stageDone).length, cur=currentStage(st);
         return `<details style="margin-top:12px;border-top:1px solid var(--line2);padding-top:10px">
           <summary class="row" style="list-style:none">
-            <span class="tag T-Release">${esc(r['軟體版號'])}</span><b>${esc(shortVendor(r['廠商名稱']))}</b>
+            <span class="tag T-Release">${esc(r['軟體版號'])}</span><b>${esc(shortVendor(r['廠商名稱']))}</b>${teamOfCard({廠商:r['廠商名稱'],合約ID:r['合約ID'],_v:'RM',_row:r})?`<span class="chip">${esc(teamOfCard({廠商:r['廠商名稱'],合約ID:r['合約ID'],_v:'RM',_row:r}))}</span>`:''}
             <span class="${stClass(rmToCard(r['整體狀態']))}">${esc(r['整體狀態']||'')}</span>
             <span class="muted" style="font-size:14px">階段 ${done}/${st.length}${cur?`・目前：${esc(cur['作業階段'])}`:''}</span>${st.filter(stageLate).length?`<span style="color:var(--danger);font-size:14px;font-weight:700">⚠ ${st.filter(stageLate).length} 個階段過期未完成</span>`:''}
             <span class="sp"></span>
@@ -1342,8 +1354,11 @@ function renderRelease(){
 function openVersion(row, isNew){
   const r={...row};
   const combos=tbl('Release_Master').filter(x=>stagesOf(x).length).map(x=>`${x['版本ID']}｜${x['廠商名稱']}｜${x['軟體版號']}`);
+  const ctLabel=k=>`${k['列ID']}｜${shortVendor(k['廠商名稱'])} ${k['維護團隊']||''}｜${k['合約名稱']}`;
+  const ctOpts=tbl('合約管理').map(ctLabel);
   const fields=[
     {k:'版本ID',req:1,v:r['版本ID'],ph:'1160215',mono:1},{k:'廠商名稱',type:'select',options:vendorList(),v:r['廠商名稱']},
+    {k:'合約ID',label:'所屬合約（決定 ATM／DMS 團隊）',type:'select',blank:1,full:1,options:ctOpts,v:(()=>{const k=tbl('合約管理').find(x=>String(x['列ID'])===String(r['合約ID']||'')); return k?ctLabel(k):(r['合約ID']||'');})()},
     {k:'軟體版號',req:1,v:r['軟體版號'],ph:'5.02'},{k:'出版性質',v:r['出版性質'],list:['例行增修更版','緊急修正','專案更版']},
     {k:'涵蓋單號清單',full:1,v:r['涵蓋單號清單'],ph:'ATM116-0215, SEC-2027-01'},
     {k:'預計交版日',type:'date',v:r['預計交版日']},{k:'預計上線日',type:'date',v:r['預計上線日']},
@@ -1354,6 +1369,8 @@ function openVersion(row, isNew){
     onSave: async()=>{
       readFields(fields,r);
       if(!r['版本ID']||!r['軟體版號']){ toast('版本ID 與軟體版號必填',true); return false; }
+      r['合約ID']=String(r['合約ID']||'').split('｜')[0].trim();
+      if(!r['合約ID']){ const ks=tbl('合約管理').filter(k=>k['廠商名稱']===r['廠商名稱']); if(ks.length===1) r['合約ID']=ks[0]['列ID']; else if(ks.length>1) toast('提醒：這家廠商有多份合約，請選所屬合約，時間軸才會分到正確團隊',true); }
       if(isNew && tbl('Release_Master').some(x=>String(x['版本ID'])===String(r['版本ID'])&&x['廠商名稱']===r['廠商名稱'])){ toast('這個版本ID＋廠商已存在',true); return false; }
       const old=row['版本ID']!==undefined?{...row}:null;
       await saveRow('Release_Master', r, isNew?'已新增版本':'版本已儲存');
@@ -1637,6 +1654,7 @@ function demoData(){
   const cards=[
     C({卡片ID:'D-01',卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：交易明細表欄位調整',關聯單號:'RQ-DEMO-001',廠商:'三商電腦',負責人:'宏全',狀態:'進行中',開始日:d(-20),截止日:d(25)}),
     C({卡片ID:'D-02',卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：查詢報表新增欄位',關聯單號:'RQ-DEMO-001',廠商:'三商電腦',負責人:'宏全',狀態:'等回覆',截止日:d(1)}),
+    C({卡片ID:'D-07',卡片類型:'專案',區塊分類:'軟體版本更新',標題:'[需求評估] 範例：DMS 派送排程調整',關聯單號:'RQ100099001',廠商:'三商電腦',負責人:'鼎傑',狀態:'進行中',開始日:d(-8),截止日:d(20),合約ID:'CT-003'}),
     C({卡片ID:'D-05',卡片類型:'維修單',區塊分類:'硬體維護',標題:'[維修單] 範例：甲廠商臉部辨識跨局反覆失敗',關聯單號:'RT-DEMO',廠商:'迪堡多富資訊',負責人:'Mike',狀態:'觀察期',開始日:d(-12),
       更新時間:addDays(TODAY,-6).toISOString(),故障類別:'臉部辨識',觸發規則:'1a 同廠商跨機台 60 天同類 ≥3 次',來源:'ATM',來源ID:'ATM-1a-DEMO',
       機台清單:JSON.stringify([{machine:'900001-1J1',branch:'範例甲局',model:'DN200AT'},{machine:'900002-1J1',branch:'範例乙局',model:'DN200AT'}])})
@@ -1650,10 +1668,12 @@ function demoData(){
     Report_History:[],
     Holidays:[{日期:'2026-12-25',名稱:'行憲紀念日',類型:'假日'},{日期:'2027-01-01',名稱:'開國紀念日',類型:'假日'}],
     Release_Master:[
-      {版本ID:'DEMO-V9',廠商名稱:'三商電腦',軟體版號:'9.01',出版性質:'例行增修更版',涵蓋單號清單:'DEMO-01',預計交版日:d(36),預計上線日:d(40),整體狀態:'進行中',備註:'範例版本',列ID:'RM-001'},
+      {版本ID:'DEMO-V9',廠商名稱:'三商電腦',軟體版號:'9.01',出版性質:'例行增修更版',涵蓋單號清單:'DEMO-01',預計交版日:d(36),預計上線日:d(40),整體狀態:'進行中',備註:'範例版本',合約ID:'CT-002',列ID:'RM-001'},
       {版本ID:'DEMO-V9',廠商名稱:'國眾電腦',軟體版號:'3.01',出版性質:'例行增修更版',涵蓋單號清單:'DEMO-01',預計交版日:d(36),預計上線日:d(40),整體狀態:'規劃中',備註:'範例版本',列ID:'RM-002'}],
     Release_Stages:stg('DEMO-V9','三商電腦','9.01',plan).concat(stg('DEMO-V9','國眾電腦','3.01',plan.map(x=>[x[0],x[1]+2,x[2]+2,x[3]]))),
-    '合約管理':[{項次:1,廠商名稱:'迪堡多富資訊',維護團隊:'ATM',合約名稱:'範例：自動櫃員機軟體增修',簽約週期:'2年',契約起日:d(-500),契約迄日:fmtD(addMonths(addDays(TODAY,-500),24)),合約狀態:'履約中',備註:'',列ID:'CT-001'}],
+    '合約管理':[{項次:1,廠商名稱:'迪堡多富資訊',維護團隊:'ATM',合約名稱:'範例：自動櫃員機軟體增修',簽約週期:'2年',契約起日:d(-500),契約迄日:fmtD(addMonths(addDays(TODAY,-500),24)),合約狀態:'履約中',備註:'',列ID:'CT-001'},
+      {項次:2,廠商名稱:'三商電腦',維護團隊:'ATM',合約名稱:'範例：自動櫃員機(三商)軟體增修',簽約週期:'2年',契約起日:d(-300),契約迄日:fmtD(addMonths(addDays(TODAY,-300),24)),合約狀態:'履約中',備註:'',列ID:'CT-002'},
+      {項次:3,廠商名稱:'三商電腦',維護團隊:'DMS',合約名稱:'範例：監控及派送系統增修暨維護',簽約週期:'2年',契約起日:d(-200),契約迄日:fmtD(addMonths(addDays(TODAY,-200),24)),合約狀態:'履約中',備註:'',列ID:'CT-003'}],
     '合約定期事項':[
       {項次:1,負責廠商:'迪堡多富資訊',合約系統:'範例：自動櫃員機軟體增修',週期頻率:'每季',執行時程:'Q1~Q8 每季',應辦事項名稱:'季度請款與工時審核',項目分類:'廠商請款',權責分工:'系統負責人 / 迪堡多富資訊',交付文件與查核表單:'增修服務彙總清單',檢核說明與罰則要點:'按季核算服務工時',關聯合約狀態:'履約中',啟用監控:true,產卡規則:'CQ:*:末',列ID:'CR-001'},
       {項次:2,負責廠商:'迪堡多富資訊',合約系統:'範例：自動櫃員機軟體增修',週期頻率:'每年',執行時程:'第4季及第8季後15日內',應辦事項名稱:'廠商資安教育訓練佐證',項目分類:'教育訓練',權責分工:'系統負責人',交付文件與查核表單:'訓練簽到表',檢核說明與罰則要點:'',關聯合約狀態:'履約中',啟用監控:true,產卡規則:'CQ:4,8:+15',列ID:'CR-002'},
