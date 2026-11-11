@@ -1842,7 +1842,7 @@ const IV_FLOW = {
   ticket:[
     {q:'這個故障主題，長官一看就懂的名稱是什麼？', hint:'維修單合併後就是一個完整的故障主題，用業務角度命名，不用寫單號或機台代碼。', fields:[{id:'topic',type:'topic',ph:'例：迪堡 DN200AT 臉部辨識跨局反覆失敗'}]},
     {q:'這是哪一類故障現象？', hint:'可複選；跨局同類故障選同一類即可。', fields:[{id:'cats',type:'chips',opts:[...FAULT_CATS.map(x=>x.name),OTHER_CAT]},{id:'sym_o',type:'text',ph:'現象補充（選填，如：重開機後仍失敗）'}]},
-    {q:'把各次故障整合成一段話，會怎麼說？', hint:'不用逐局列舉；說清楚共同現象、發生期間與範圍。這段會存進卡片「描述」最上方。', fields:[{id:'cases',type:'info'},{id:'cause',type:'area',ph:'例：11/1 起，3 個局的迪堡臉辨機台於清晨重開機後反覆辨識失敗，多集中在西曬時段。'}]},
+    {q:'把各次故障整合成一段話，會怎麼說？', hint:'上面的各次紀錄可以整理（刪掉重複、修正文字），下面寫成統整的一段。按「存回卡片描述」或最後的「套用到卡片並儲存」才會寫回卡片。', fields:[{id:'cases',type:'info',lbl:'各次故障紀錄（可直接編輯、刪除；來自卡片「描述」）'},{id:'cause',type:'area',lbl:'統整後的故障經過（給長官看的那一段）',ph:'例：11/1 起，3 個局的迪堡臉辨機台於清晨重開機後反覆辨識失敗，多集中在西曬時段。'},{id:'descbtn',type:'descbtn'}]},
     {q:'這個故障現在處置到哪裡？', hint:'長官最在意：是查修中、已有替代方案，還是已修好。', fields:[{id:'status',type:'select',opts:['查修中','已提供暫時替代方案（Workaround）','已徹底修復','觀察期','等待廠商回覆']}]},
     {q:'影響到哪些範圍？業務衝擊是什麼？', hint:'用數字說話：幾台、幾筆、客戶感受到什麼。', fields:[{id:'scope',type:'select',opts:['單一機台','同局多台機台','跨局多台機台','全區／系統性']},{id:'cnt',type:'text',ph:'受影響台數／筆數（如：3 台、約 50 筆）'},{id:'impact',type:'select',ph:'— 業務衝擊 —',opts:['無客戶衝擊（僅監控異常）','偶發交易失敗','客戶卡片被吞／退卡','無法提供服務（停機）','帳務／交易異常']}]},
     {q:'為什麼會發生？', hint:'用非技術語言；還沒查出來就選「原因查明中」。', fields:[{id:'rca',type:'select',opts:['硬體零件故障','軟體缺陷','參數／設定問題','網路／通訊異常','環境因素（光線、溫度）','操作／流程問題','原因查明中']},{id:'rca_d',type:'text',ph:'白話補充原因（選填）'}]},
@@ -1858,7 +1858,7 @@ const descCases = c => String(c['描述']||'').replace(CONS_RE,'').trim();
 const topicOf = c => String(c['標題']||'').replace(/^\[維修單\]\s*/,'').trim();
 /** 去掉卡片本週進展裡自動帶入的故障原因（已另外整理成「各次故障紀錄」），避免 prompt 重複 */
 function stripSeed(c,raw){
-  const known=new Set(String(c['描述']||'').split('\n').map(s=>s.trim()).filter(Boolean));
+  const known=new Set((String(c['描述']||'')+'\n'+String(c['_descOrig']||'')).split('\n').map(s=>s.trim()).filter(Boolean));
   return String(raw||'').split('\n').filter(l=>{ const t=l.trim(); return t && !/^故障類別：/.test(t) && t!=='故障原因／現象：' && !known.has(t); }).join('\n').trim();
 }
 function ivDefaults(c,kind){
@@ -1937,7 +1937,7 @@ function mdTableHtml(t){
 }
 function openInterview(id){
   const wk=CUR_WEEK, c=cardById(id), kind=ivKind(c), flow=IV_FLOW[kind]; if(!flow) return;
-  const k=`${wk}|${id}`, iv=ivGet(c,kind,k); let step=0;
+  const k=`${wk}|${id}`, iv=ivGet(c,kind,k); let step=0, cases=descCases(c);
   const root=$('#modalRoot'), close=()=>{ root.innerHTML=''; renderPool(); };
   const ensureDraft=()=>{ const p=progOf(wk,id)||{}; draft[k]=draft[k]||{狀態:p['狀態']||c['狀態'],本週進展:p['本週進展']||'',風險與協同:p['風險與協同']||'',下週預計:p['下週預計']||''}; return draft[k]; };
   const raw=()=>{ const d=draft[k], p=progOf(wk,id)||{}; return d?d['本週進展']:(p['本週進展']||''); };
@@ -1950,10 +1950,17 @@ function openInterview(id){
     if(f.type==='date') return `<input type="date" data-ivf="${f.id}" value="${esc(v||'')}">`;
     if(f.type==='area') return `<textarea rows="5" data-ivf="${f.id}" placeholder="${esc(f.ph||'')}">${esc(v||'')}</textarea>`;
     if(f.type==='topic') return `<input data-ivf="${f.id}" placeholder="${esc(f.ph||'')}" value="${esc(v||'')}"><div class="row"><button type="button" class="sm" id="ivTitle">設為卡片標題</button><span class="muted" style="font-size:13px">目前標題：${esc(c['標題'])}</span></div>`;
-    if(f.type==='info'){ const cs=descCases(c); return `<div class="iv-ref"><div class="label">各次故障紀錄（來自卡片，僅供參考）</div><div>${cs?esc(cs).replace(/\n/g,'<br>'):'<span class="muted">卡片沒有故障紀錄</span>'}</div></div>`; }
+    if(f.type==='info') return `<textarea rows="6" data-ivcases placeholder="各次故障的日期、局名、現象…">${esc(cases)}</textarea>`;
+    if(f.type==='descbtn') return `<div class="row"><button type="button" class="sm" id="ivDesc">存回卡片描述</button><span class="muted" style="font-size:13px">把上面兩段寫進卡片「描述」</span></div>`;
     if(f.type==='raw') return `<textarea rows="9" data-ivraw placeholder="${esc(f.ph||'')}">${esc(raw())}</textarea>`;
     return ''; };
-  const prompt=()=>mgmtPrompt([ivBlock(c,kind,iv,rawAll())]);
+  const prompt=()=>mgmtPrompt([ivBlock(Object.assign({},c,{'描述':cases,'_descOrig':c['描述']}),kind,iv,rawAll())]);
+  const writeDesc=async()=>{ const cs=String(iv.cause||'').trim().replace(/\n{2,}/g,'\n'); const nd=(cs?`【統整故障原因】${cs}\n\n`:'')+String(cases||'').trim(); if(nd!==String(c['描述']||'')){
+    const oldSeed=ticketSeed(c); c['描述']=nd; await persistCardFields(c); const newSeed=ticketSeed(c);
+    // 本週進展若是自動帶入的故障原因，同步成新的內容
+    const d=draft[k]; if(d && oldSeed && String(d['本週進展']).includes(oldSeed)) d['本週進展']=d['本週進展'].replace(oldSeed,newSeed);
+    const pr=progOf(wk,id); if(pr && oldSeed && String(pr['本週進展']).includes(oldSeed)){ pr['本週進展']=pr['本週進展'].replace(oldSeed,newSeed); pr['寫入時間']=nowISO(); await persist('saveProgress',{rows:[pr]}); }
+  } };
   const sumHtml=()=>{ const L=ivLines(kind,iv); return L.length?L.map(x=>`<li>${esc(x.t)}</li>`).join(''):'<li class="muted">還沒有回答，從左邊開始選。</li>'; };
   const draw=()=>{
     const q=flow[step], n=flow.length;
@@ -1963,7 +1970,7 @@ function openInterview(id){
         <div class="iv-left">
           <div class="iv-steps">${flow.map((x,i)=>`<button type="button" data-step="${i}" class="${i===step?'on':''} ${answered(x)?'done':''}" title="${esc(x.q)}">${i+1}</button>`).join('')}</div>
           <div class="iv-q"><span class="iv-n">Q${step+1} / ${n}</span><h3>${esc(q.q)}</h3><p class="muted" style="margin:0">${esc(q.hint)}</p>
-            <div class="iv-fields">${q.fields.map(fieldHtml).join('')}</div></div>
+            <div class="iv-fields">${q.fields.map(f=>(f.lbl?`<div class="label" style="margin:6px 0 -4px">${esc(f.lbl)}</div>`:'')+fieldHtml(f)).join('')}</div></div>
           <div class="iv-nav"><button id="ivPrev" ${step===0?'disabled':''}>上一題</button><span class="sp"></span>${step<n-1?'<button class="primary" id="ivNext">下一題</button>':'<button class="primary" id="ivDone">完成</button>'}</div>
         </div>
         <div class="iv-right">
@@ -1987,18 +1994,19 @@ function openInterview(id){
     const ch=t.closest('[data-chip]'); if(ch){ const f=ch.dataset.chip, v=ch.dataset.v; const a=new Set(iv[f]||[]); a.has(v)?a.delete(v):a.add(v); iv[f]=[...a]; ch.classList.toggle('on',a.has(v)); ivStore.set(k,iv); sync(); return; }
     if(t.closest('#ivTitle')){ const tp=String(iv.topic||'').trim(); if(!tp){ toast('請先輸入故障主題',true); return; }
       c['標題']=(/^\[維修單\]/.test(c['標題'])?'[維修單] ':'')+tp; await persistCardFields(c); const h2=root.querySelector('h2'); if(h2) h2.textContent=c['標題']; toast('已設為卡片標題'); return; }
+    if(t.closest('#ivDesc')){ await writeDesc(); toast('已存回卡片描述'); return; }
     if(t.closest('#ivCopy')){ copy(prompt(),'prompt 已複製，貼給 Gemini 或 Claude 即可'); return; }
     if(t.closest('#ivApply')){
       const d=ensureDraft(), L=ivLines(kind,iv), risk=L.filter(x=>x.k==='risk').map(x=>x.t).join('；'), next=L.filter(x=>x.k==='next').map(x=>x.t).join('；');
       if(risk&&!String(d['風險與協同']).trim()) d['風險與協同']=risk;
       if(next&&!String(d['下週預計']).trim()) d['下週預計']=next;
       if(!String(d['本週進展']).trim()){ toast('請先在最後一題填原始紀錄（本週進展必填）',true); return; }
-      if(kind==='ticket'){ const cs=String(iv.cause||'').trim().replace(/\n{2,}/g,'\n');
-        if(cs && cs!==consBlock(c)){ c['描述']=`【統整故障原因】${cs}\n\n${String(c['描述']||'').replace(CONS_RE,'')}`; await persistCardFields(c); } }
+      if(kind==='ticket') await writeDesc();
       root.innerHTML=''; await saveProgress([id]);
     }
   };
   root.oninput=e=>{ const t=e.target;
+    if(t.dataset.ivcases!==undefined){ cases=t.value; sync(); return; }
     if(t.dataset.ivraw!==undefined){ ensureDraft()['本週進展']=t.value; sync(); return; }
     const f=t.dataset.ivf; if(f){ iv[f]=t.value; ivStore.set(k,iv); sync(); } };
   draw();
