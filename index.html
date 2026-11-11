@@ -156,6 +156,8 @@ a{color:var(--accent)}
 .mgt{border-collapse:collapse;width:100%;font-size:15px;background:#fff}
 .mgt th,.mgt td{border:1px solid var(--line);padding:9px 12px;vertical-align:top;text-align:left;line-height:1.7}
 .mgt th{background:var(--soft);white-space:nowrap}
+
+.iv-ref{background:#fff;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.7;max-height:150px;overflow:auto}
 @media(max-width:900px){.iv-grid{grid-template-columns:1fr}#ivPrompt{height:220px}}
 /* common */
 .panel{background:var(--card);border:1px solid var(--edge);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
@@ -1838,20 +1840,38 @@ const IV_FLOW = {
     {q:'把你的原始紀錄貼上來，我幫你翻成長官看得懂的話', hint:'雜亂也沒關係，這就是卡片的「本週進展」，改這裡就是改卡片。', fields:[{id:'raw',type:'raw',ph:'例：改了磁條讀取 timeout，LAB 測試沒卡紙；催廠商下週二交程式'}]}
   ],
   ticket:[
-    {q:'這張維修單現在處置到哪裡？', hint:'長官最在意：是查修中、已有替代方案，還是已修好。', fields:[{id:'status',type:'select',opts:['查修中','已提供暫時替代方案（Workaround）','已徹底修復','觀察期','等待廠商回覆']}]},
+    {q:'這個故障主題，長官一看就懂的名稱是什麼？', hint:'維修單合併後就是一個完整的故障主題，用業務角度命名，不用寫單號或機台代碼。', fields:[{id:'topic',type:'topic',ph:'例：迪堡 DN200AT 臉部辨識跨局反覆失敗'}]},
+    {q:'這是哪一類故障現象？', hint:'可複選；跨局同類故障選同一類即可。', fields:[{id:'cats',type:'chips',opts:[...FAULT_CATS.map(x=>x.name),OTHER_CAT]},{id:'sym_o',type:'text',ph:'現象補充（選填，如：重開機後仍失敗）'}]},
+    {q:'把各次故障整合成一段話，會怎麼說？', hint:'不用逐局列舉；說清楚共同現象、發生期間與範圍。這段會存進卡片「描述」最上方。', fields:[{id:'cases',type:'info'},{id:'cause',type:'area',ph:'例：11/1 起，3 個局的迪堡臉辨機台於清晨重開機後反覆辨識失敗，多集中在西曬時段。'}]},
+    {q:'這個故障現在處置到哪裡？', hint:'長官最在意：是查修中、已有替代方案，還是已修好。', fields:[{id:'status',type:'select',opts:['查修中','已提供暫時替代方案（Workaround）','已徹底修復','觀察期','等待廠商回覆']}]},
     {q:'影響到哪些範圍？業務衝擊是什麼？', hint:'用數字說話：幾台、幾筆、客戶感受到什麼。', fields:[{id:'scope',type:'select',opts:['單一機台','同局多台機台','跨局多台機台','全區／系統性']},{id:'cnt',type:'text',ph:'受影響台數／筆數（如：3 台、約 50 筆）'},{id:'impact',type:'select',ph:'— 業務衝擊 —',opts:['無客戶衝擊（僅監控異常）','偶發交易失敗','客戶卡片被吞／退卡','無法提供服務（停機）','帳務／交易異常']}]},
     {q:'為什麼會發生？', hint:'用非技術語言；還沒查出來就選「原因查明中」。', fields:[{id:'rca',type:'select',opts:['硬體零件故障','軟體缺陷','參數／設定問題','網路／通訊異常','環境因素（光線、溫度）','操作／流程問題','原因查明中']},{id:'rca_d',type:'text',ph:'白話補充原因（選填）'}]},
     {q:'做了哪些預防作為？', hint:'可複選；長官會看你有沒有避免再發。', fields:[{id:'prev',type:'chips',opts:['增設自動告警','移至離峰時段執行','增加例行巡檢','廠商韌體／程式修補','加裝／調整設備','建立處理 SOP','暫無']},{id:'prev_o',type:'text',ph:'其他預防作為（選填）'}]},
     {q:'預計什麼時候修復？', hint:'給日期；還不確定就先空白。', fields:[{id:'eta_k',type:'select',opts:['預計修復','預計結束觀察期','預計換版修正','預計廠商到場']},{id:'eta_d',type:'date'}]},
-    {q:'把你的原始紀錄貼上來，我幫你翻成長官看得懂的話', hint:'已預先帶入故障原因；補上處理過程即可，改這裡就是改卡片的「本週進展」。', fields:[{id:'raw',type:'raw',ph:'例：廠商 11/12 到場更換吐鈔模組，觀察中'}]}
+    {q:'這週的處理過程有哪些？', hint:'寫處理進度即可（廠商到場、更換、觀察…）；改這裡就是改卡片的「本週進展」。', fields:[{id:'raw',type:'raw',ph:'例：廠商 11/12 到場更換吐鈔模組，觀察中'}]}
   ]
 };
 const TICKET_STATUS={'開立':'查修中','已通知廠商':'查修中','廠商處理中':'查修中','觀察期':'觀察期','結案':'已徹底修復'};
+const CONS_RE=/^【統整故障原因】([\s\S]*?)\n\n/;
+const consBlock = c => { const m=String(c['描述']||'').match(CONS_RE); return m?m[1].trim():''; };
+const descCases = c => String(c['描述']||'').replace(CONS_RE,'').trim();
+const topicOf = c => String(c['標題']||'').replace(/^\[維修單\]\s*/,'').trim();
+/** 去掉卡片本週進展裡自動帶入的故障原因（已另外整理成「各次故障紀錄」），避免 prompt 重複 */
+function stripSeed(c,raw){
+  const known=new Set(String(c['描述']||'').split('\n').map(s=>s.trim()).filter(Boolean));
+  return String(raw||'').split('\n').filter(l=>{ const t=l.trim(); return t && !/^故障類別：/.test(t) && t!=='故障原因／現象：' && !known.has(t); }).join('\n').trim();
+}
 function ivDefaults(c,kind){
   const d={};
-  if(kind==='ticket'){ const n=parseJSON(c['機台清單'],[]).length; if(n) d.cnt=n+' 台'; if(TICKET_STATUS[c['狀態']]) d.status=TICKET_STATUS[c['狀態']]; }
+  if(kind==='ticket'){
+    const n=parseJSON(c['機台清單'],[]).length; if(n) d.cnt=n+' 台'; if(TICKET_STATUS[c['狀態']]) d.status=TICKET_STATUS[c['狀態']];
+    d.topic=topicOf(c); d.cats=String(c['故障類別']||'').split('、').filter(Boolean);
+  }
   return d;
 }
+/** 預設值 + 這台電腦存的答案；統整故障經過以卡片「描述」最上方的區塊為準 */
+function ivGet(c,kind,k){ const iv=Object.assign({},ivDefaults(c,kind),ivStore.get(k)); if(kind==='ticket'){ const b=consBlock(c); if(b) iv.cause=b; } return iv; }
+async function persistCardFields(c){ const i=S.Cards.findIndex(x=>x['卡片ID']===c['卡片ID']); if(i>=0) S.Cards[i]=c; await persist('saveCards',{rows:[c]}); }
 const ivFilled = v => Array.isArray(v) ? v.length>0 : String(v||'').trim()!=='';
 /** 把選單答案轉成要給 AI 的條列；k = prog/risk/next */
 function ivLines(kind,iv){
@@ -1863,8 +1883,10 @@ function ivLines(kind,iv){
     add('risk',iv.block&&`需協調／阻礙：${iv.block}${iv.block_d?'（'+iv.block_d+'）':''}`);
     add('next',(iv.eta_k||iv.eta_d)&&`預期時程：${iv.eta_k||'預計'} ${iv.eta_d||'（日期未定）'}`);
   }else if(kind==='ticket'){
+    add('prog',j(iv.cats,iv.sym_o)&&`故障現象類別：${j(iv.cats,iv.sym_o)}`);
+    add('prog',String(iv.cause||'').trim()&&`統整故障經過：${String(iv.cause).trim().replace(/\n+/g,' ')}`);
     add('prog',iv.status&&`處置狀態：${iv.status}`);
-    add('prog',(iv.scope||iv.cnt)&&`影響範圍：${[iv.scope,iv.cnt&&'（'+iv.cnt+'）'].filter(Boolean).join('')}`);
+    add('prog',(iv.scope||iv.cnt)&&`影響範圍：${[iv.scope,iv.cnt&&(iv.scope?'（'+iv.cnt+'）':iv.cnt)].filter(Boolean).join('')}`);
     add('prog',iv.impact&&`業務衝擊：${iv.impact}`);
     add('prog',(iv.rca||iv.rca_d)&&`根本原因：${[iv.rca,iv.rca_d].filter(Boolean).join('；')}`);
     add('next',j(iv.prev,iv.prev_o)&&`預防作為：${j(iv.prev,iv.prev_o)}`);
@@ -1876,19 +1898,28 @@ const ivTypeLabel = c => c['卡片類型']==='維修單'?'維修單':(c['卡片�
 function ivBlock(c,kind,iv,raw){
   const rq=String(c['關聯單號']||'').trim();
   const L=ivLines(kind,iv).map(x=>'- '+x.t);
+  if(kind==='ticket'){
+    const ms=parseJSON(c['機台清單'],[]), br=new Set(ms.map(m=>m.branch).filter(Boolean)), cases=descCases(c), pr=stripSeed(c,raw);
+    return [`### ${rq?'['+rq+'] ':''}故障主題：${String(iv.topic||topicOf(c))}`,
+      `單據類型：維修單（統整後的單一故障主題）｜廠商：${c['廠商']||'-'}｜負責人：${c['負責人']||'-'}｜系統狀態：${c['狀態']||'-'}`,
+      ms.length?`涵蓋範圍：${ms.length} 台機台、${br.size||'?'} 個局`:'',
+      L.length?`訪談結果：\n${L.join('\n')}`:'',
+      cases?`各次故障紀錄（供你彙整成一段，不要逐筆列出）：\n${cases}`:'',
+      pr?`處理進度紀錄：\n${pr}`:''].filter(Boolean).join('\n');
+  }
   return [`### ${rq?'['+rq+'] ':''}${c['標題']}`,
     `單據類型：${ivTypeLabel(c)}｜廠商：${c['廠商']||'-'}｜負責人：${c['負責人']||'-'}｜系統狀態：${c['狀態']||'-'}`,
     L.length?`訪談結果：\n${L.join('\n')}`:'',
     String(raw||'').trim()?`原始紀錄：\n${String(raw).trim()}`:''].filter(Boolean).join('\n');
 }
 function mgmtPrompt(blocks){
-  return `${MGMT_SYS}\n\n---\n\n## 本次輸入資料\n以下是本週的單據資料。「訪談結果」是承辦人以選單確認的事實，「原始紀錄」是承辦人的雜亂筆記，請依上面的規則改寫。\n\n${blocks.join('\n\n')}\n\n---\n\n## 輸出要求\n- 只輸出一個 Markdown 表格（含表頭），每個「單號／主題」一列；同一單號的多項事項整合在同列內，並以 <br> 換行。\n- 不得新增輸入資料中沒有的事實、日期、數字或人名；缺資料的面向直接省略，不要臆測。\n- 單號、機台代碼、廠商名稱、專有名詞原樣保留。\n- 備註欄需包含狀態、預計時間與負責人。\n- 不要輸出表格以外的任何說明文字。`;
+  return `${MGMT_SYS}\n\n---\n\n## 本次輸入資料\n以下是本週的單據資料。「訪談結果」是承辦人以選單確認的事實，「原始紀錄」是承辦人的雜亂筆記，請依上面的規則改寫。\n\n${blocks.join('\n\n')}\n\n---\n\n## 輸出要求\n- 只輸出一個 Markdown 表格（含表頭），每個「單號／主題」一列；同一單號的多項事項整合在同列內，並以 <br> 換行。\n- 不得新增輸入資料中沒有的事實、日期、數字或人名；缺資料的面向直接省略，不要臆測。\n- 單號、機台代碼、廠商名稱、專有名詞原樣保留。\n- 維修單若涵蓋多個局或多台機台，請整合成「同一個故障主題」一列，用「共 N 台、跨 M 局」概述影響範圍，不要逐局拆成多列。\n- 備註欄需包含狀態、預計時間與負責人。\n- 不要輸出表格以外的任何說明文字。`;
 }
 const progText = p => !p?'':[p['本週進展'],p['風險與協同']&&('風險與協同：'+p['風險與協同']),p['下週預計']&&('下週預計：'+p['下週預計'])].filter(x=>x&&String(x).trim()).join('\n');
 function mgmtItems(wk){
   const done=[], todo=[];
   poolIds(wk).forEach(id=>{
-    const c=cardById(id), kind=ivKind(c), iv=Object.assign({},ivDefaults(c,kind),ivStore.get(`${wk}|${id}`));
+    const c=cardById(id), kind=ivKind(c), iv=ivGet(c,kind,`${wk}|${id}`);
     const raw=progText(progOf(wk,id)), answered=ivLines(kind,ivStore.get(`${wk}|${id}`)).length>0;
     if(!answered && !String(raw).trim()){ todo.push(c['標題']); return; }
     done.push({id,c,answered,block:ivBlock(c,kind,iv,raw)});
@@ -1906,7 +1937,7 @@ function mdTableHtml(t){
 }
 function openInterview(id){
   const wk=CUR_WEEK, c=cardById(id), kind=ivKind(c), flow=IV_FLOW[kind]; if(!flow) return;
-  const k=`${wk}|${id}`, iv=Object.assign({},ivDefaults(c,kind),ivStore.get(k)); let step=0;
+  const k=`${wk}|${id}`, iv=ivGet(c,kind,k); let step=0;
   const root=$('#modalRoot'), close=()=>{ root.innerHTML=''; renderPool(); };
   const ensureDraft=()=>{ const p=progOf(wk,id)||{}; draft[k]=draft[k]||{狀態:p['狀態']||c['狀態'],本週進展:p['本週進展']||'',風險與協同:p['風險與協同']||'',下週預計:p['下週預計']||''}; return draft[k]; };
   const raw=()=>{ const d=draft[k], p=progOf(wk,id)||{}; return d?d['本週進展']:(p['本週進展']||''); };
@@ -1917,6 +1948,9 @@ function openInterview(id){
     if(f.type==='chips') return `<div class="chips">${f.opts.map(o=>`<button type="button" class="chip ${(v||[]).includes(o)?'on':''}" data-chip="${f.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
     if(f.type==='text') return `<input data-ivf="${f.id}" placeholder="${esc(f.ph||'')}" value="${esc(v||'')}">`;
     if(f.type==='date') return `<input type="date" data-ivf="${f.id}" value="${esc(v||'')}">`;
+    if(f.type==='area') return `<textarea rows="5" data-ivf="${f.id}" placeholder="${esc(f.ph||'')}">${esc(v||'')}</textarea>`;
+    if(f.type==='topic') return `<input data-ivf="${f.id}" placeholder="${esc(f.ph||'')}" value="${esc(v||'')}"><div class="row"><button type="button" class="sm" id="ivTitle">設為卡片標題</button><span class="muted" style="font-size:13px">目前標題：${esc(c['標題'])}</span></div>`;
+    if(f.type==='info'){ const cs=descCases(c); return `<div class="iv-ref"><div class="label">各次故障紀錄（來自卡片，僅供參考）</div><div>${cs?esc(cs).replace(/\n/g,'<br>'):'<span class="muted">卡片沒有故障紀錄</span>'}</div></div>`; }
     if(f.type==='raw') return `<textarea rows="9" data-ivraw placeholder="${esc(f.ph||'')}">${esc(raw())}</textarea>`;
     return ''; };
   const prompt=()=>mgmtPrompt([ivBlock(c,kind,iv,rawAll())]);
@@ -1937,7 +1971,7 @@ function openInterview(id){
           <ul class="iv-sum" id="ivSum">${sumHtml()}</ul>
           <label class="label" for="ivPrompt" style="margin-top:12px;display:block">管理層週報 prompt（即時更新）</label>
           <textarea id="ivPrompt" readonly></textarea>
-          <div class="row" style="margin-top:9px;flex-wrap:wrap"><button class="primary" id="ivCopy">複製 prompt</button><a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">前往 Gemini ↗</a><a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">前往 Claude ↗</a><span class="sp"></span><button id="ivApply" title="把阻礙／時程寫進『風險與協同』『下週預計』（只補空白），並儲存本週進展">套用到卡片並儲存</button></div>
+          <div class="row" style="margin-top:9px;flex-wrap:wrap"><button class="primary" id="ivCopy">複製 prompt</button><a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">前往 Gemini ↗</a><a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">前往 Claude ↗</a><span class="sp"></span><button id="ivApply" title="把阻礙／時程補進『風險與協同』『下週預計』（只補空白）、統整故障經過寫入卡片描述，並儲存本週進展">套用到卡片並儲存</button></div>
           <div class="muted" style="font-size:13px;margin-top:8px">選單答案只存在這台電腦的瀏覽器；原始紀錄就是卡片的「本週進展」。</div>
         </div></div></div></div>`;
     sync();
@@ -1951,12 +1985,16 @@ function openInterview(id){
     const st=t.closest('[data-step]'); if(st){ step=+st.dataset.step; draw(); return; }
     if(t.closest('#ivNext')){ step++; draw(); return; } if(t.closest('#ivPrev')){ step--; draw(); return; }
     const ch=t.closest('[data-chip]'); if(ch){ const f=ch.dataset.chip, v=ch.dataset.v; const a=new Set(iv[f]||[]); a.has(v)?a.delete(v):a.add(v); iv[f]=[...a]; ch.classList.toggle('on',a.has(v)); ivStore.set(k,iv); sync(); return; }
+    if(t.closest('#ivTitle')){ const tp=String(iv.topic||'').trim(); if(!tp){ toast('請先輸入故障主題',true); return; }
+      c['標題']=(/^\[維修單\]/.test(c['標題'])?'[維修單] ':'')+tp; await persistCardFields(c); const h2=root.querySelector('h2'); if(h2) h2.textContent=c['標題']; toast('已設為卡片標題'); return; }
     if(t.closest('#ivCopy')){ copy(prompt(),'prompt 已複製，貼給 Gemini 或 Claude 即可'); return; }
     if(t.closest('#ivApply')){
       const d=ensureDraft(), L=ivLines(kind,iv), risk=L.filter(x=>x.k==='risk').map(x=>x.t).join('；'), next=L.filter(x=>x.k==='next').map(x=>x.t).join('；');
       if(risk&&!String(d['風險與協同']).trim()) d['風險與協同']=risk;
       if(next&&!String(d['下週預計']).trim()) d['下週預計']=next;
       if(!String(d['本週進展']).trim()){ toast('請先在最後一題填原始紀錄（本週進展必填）',true); return; }
+      if(kind==='ticket'){ const cs=String(iv.cause||'').trim().replace(/\n{2,}/g,'\n');
+        if(cs && cs!==consBlock(c)){ c['描述']=`【統整故障原因】${cs}\n\n${String(c['描述']||'').replace(CONS_RE,'')}`; await persistCardFields(c); } }
       root.innerHTML=''; await saveProgress([id]);
     }
   };
