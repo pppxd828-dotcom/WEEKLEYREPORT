@@ -6,6 +6,7 @@
 <title>工作水池</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMTYwIiBmaWxsPSJub25lIj4KPGcgc3Ryb2tlPSIjMkY1RkQwIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgPHBhdGggZD0iTTI0IDgwQzI0IDQ5LjEgNDkuMSAyNCA4MCAyNHM1NiAyNS4xIDU2IDU2Ii8+CiAgPHBhdGggZD0iTTI0IDgwYzAgMzAuOSAyNS4xIDU2IDU2IDU2czU2LTI1LjEgNTYtNTYiLz4KICA8cGF0aCBkPSJNNDIgODBjMC0yMSAxNy0zOCAzOC0zOHMzOCAxNyAzOCAzOCIvPgogIDxwYXRoIGQ9Ik00MiA4MGMwIDIxIDE3IDM4IDM4IDM4czM4LTE3IDM4LTM4IiBzdHJva2U9IiMyQThGRDAiLz4KPC9nPgo8Y2lyY2xlIGN4PSI4MCIgY3k9IjgwIiByPSI2IiBmaWxsPSIjQzk4QTFGIi8+Cjwvc3ZnPg==">
 <meta name="theme-color" content="#263F78">
 <style>
 /* ===== 設計系統：Cobalt Frost（冰霜白 × 鈷藍）===== */
@@ -62,7 +63,7 @@ a{color:var(--accent)}
 .side{padding:10px 14px 20px;overflow-y:auto;flex:1}
 .side .eyebrow{color:#A3B7DD}
 #nav{display:flex;flex-direction:column;gap:3px;margin-top:10px}
-#nav button{width:100%;display:flex;align-items:center;gap:12px;border:1px solid transparent;border-radius:var(--r);padding:10px 12px;background:none;text-align:left;color:#C3D1EC}
+#nav button{width:100%;display:flex;align-items:center;gap:12px;border:1px solid transparent;border-radius:var(--r);padding:7px 12px;background:none;text-align:left;color:#C3D1EC}
 #nav button b{display:block;font-size:16px;font-weight:500}
 #nav button small{display:block;font:11.5px var(--f-mono);letter-spacing:.06em;color:#A3B7DD;margin-top:1px}
 #nav button em{font:13px var(--f-mono);font-style:normal;color:#A3B7DD;width:22px}
@@ -105,10 +106,57 @@ a{color:var(--accent)}
   .side .eyebrow,.snap{display:none}
   #nav{flex-direction:row;overflow-x:auto;margin:0}
   #nav button{width:auto;white-space:nowrap;padding:6px 12px}
-  #nav button small,#nav button em{display:none}
+  #nav button small{display:none}#nav button .ni{width:18px;height:18px}
   .side-foot{flex-direction:row;flex-wrap:wrap;padding:0 14px 10px}
   .hero .big{display:none}
 }
+/* ===== 圖像素材（SVG，內嵌）===== */
+.ni{display:inline-block;width:22px;height:22px;flex:none;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;opacity:.85}
+#nav button:hover .ni{opacity:1}#nav button.on .ni{opacity:1;background:#8CC4FF}
+#nav button[data-tab="timeline"] .ni{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M6.5 3.5v17%22/%3E%0A%3Cpath d=%22M6.5 5H18M6.5 12H16M6.5 19H19%22/%3E%0A%3Ccircle cx=%226.5%22 cy=%225%22 r=%222%22/%3E%0A%3Ccircle cx=%226.5%22 cy=%2212%22 r=%222%22/%3E%0A%3Ccircle cx=%226.5%22 cy=%2219%22 r=%222%22/%3E%0A%3C/svg%3E")}
+#nav button[data-tab="pool"] .ni{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M3 8c2.2-2 4.4-2 6.6 0s4.4 2 6.6 0 4.4-2 5.8-.7%22/%3E%0A%3Cpath d=%22M3 13c2.2-2 4.4-2 6.6 0s4.4 2 6.6 0 4.4-2 5.8-.7%22/%3E%0A%3Cpath d=%22M3 18c2.2-2 4.4-2 6.6 0s4.4 2 6.6 0 4.4-2 5.8-.7%22/%3E%0A%3Cpath d=%22M12 3v2M10 4h4%22/%3E%0A%3C/svg%3E")}
+#nav button[data-tab="atm"] .ni{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Crect x=%224.5%22 y=%222.5%22 width=%2215%22 height=%2219%22 rx=%222%22/%3E%0A%3Crect x=%227.5%22 y=%225.5%22 width=%229%22 height=%225%22 rx=%22.7%22/%3E%0A%3Cpath d=%22M7.5 14H11M13 14h3.5M7.5 17H16.5%22/%3E%0A%3Cpath d=%22M10 19h4%22/%3E%0A%3C/svg%3E")}
+#nav button[data-tab="cards"] .ni{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Crect x=%226%22 y=%223%22 width=%2214%22 height=%2217%22 rx=%222%22/%3E%0A%3Cpath d=%22M9 7h8M9 11h8M9 15h5%22/%3E%0A%3Cpath d=%22M3.5 7v12a2 2 0 0 0 2 2H17%22/%3E%0A%3C/svg%3E")}
+#nav button[data-tab="release"] .ni{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M4 5h16M4 12h16M4 19h16%22/%3E%0A%3Ccircle cx=%228%22 cy=%225%22 r=%222%22/%3E%0A%3Ccircle cx=%2215%22 cy=%2212%22 r=%222%22/%3E%0A%3Ccircle cx=%2211%22 cy=%2219%22 r=%222%22/%3E%0A%3Cpath d=%22M8 7v3M15 14v3%22/%3E%0A%3C/svg%3E")}
+#nav button[data-tab="contracts"] .ni{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M6 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20z%22/%3E%0A%3Cpath d=%22M14 3.5V8h4M9 12h6M9 15h6%22/%3E%0A%3Cpath d=%22M9.5 18l1.5 1.5 3.5-3.5%22/%3E%0A%3C/svg%3E")}
+#nav button[data-tab="import"] .ni{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M12 15V3M7.5 7.5 12 3l4.5 4.5%22/%3E%0A%3Cpath d=%22M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5%22/%3E%0A%3C/svg%3E")}
+.tag::before{content:'';display:inline-block;width:14px;height:14px;margin:-2px 5px 0 -1px;vertical-align:middle;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.T-專案{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Crect x=%223%22 y=%225%22 width=%2218%22 height=%2215%22 rx=%222%22/%3E%0A%3Cpath d=%22M8 5V3.5h8V5M7 10h10M7 14h6%22/%3E%0A%3Ccircle cx=%2217.5%22 cy=%2215.5%22 r=%221.5%22/%3E%0A%3C/svg%3E")}
+.T-資安專案{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M12 2.8 19 5.5v5.2c0 4.7-2.8 8.1-7 10.5-4.2-2.4-7-5.8-7-10.5V5.5z%22/%3E%0A%3Cpath d=%22m9 11.5 2 2 4-4%22/%3E%0A%3C/svg%3E")}
+.T-定期事項{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M20 7v5h-5M4 17v-5h5%22/%3E%0A%3Cpath d=%22M5.5 9A7 7 0 0 1 18 6.5L20 12M4 12l2 5.5A7 7 0 0 0 18.5 15%22/%3E%0A%3Cpath d=%22M12 8v4l2.5 1.5%22/%3E%0A%3C/svg%3E")}
+.T-Release{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M4 5h16M4 12h16M4 19h16%22/%3E%0A%3Ccircle cx=%228%22 cy=%225%22 r=%222%22/%3E%0A%3Ccircle cx=%2215%22 cy=%2212%22 r=%222%22/%3E%0A%3Ccircle cx=%2211%22 cy=%2219%22 r=%222%22/%3E%0A%3Cpath d=%22M15 4v4%22/%3E%0A%3C/svg%3E")}
+.T-維修單{--m:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%221.75%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%0A%3Cpath d=%22M5 3.5h14v17H5z%22/%3E%0A%3Cpath d=%22M8 7h8M8 11h5%22/%3E%0A%3Cpath d=%22m9 17 2-2 2 2 3-3%22/%3E%0A%3Ccircle cx=%2216.5%22 cy=%2211%22 r=%221%22/%3E%0A%3C/svg%3E")}
+.brand-mark{background:#EDF2F9;border:0;padding:6px;box-shadow:0 0 0 1px rgba(255,255,255,.25)}.brand-mark img{width:100%;height:100%;display:block}
+.sidebar{background-image:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgMjIwIiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjIyMCIgZmlsbD0ibm9uZSI+CjxnIHN0cm9rZT0iI0UzRUJGQiIgc3Ryb2tlLXdpZHRoPSIxLjI1IiBvcGFjaXR5PSIuMTIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiA8cGF0aCBkPSJNLTIwIDMyYzM0LTIyIDY4LTIyIDEwMiAwczY4IDIyIDEwMiAwIDY4LTIyIDEwMiAwIDY4IDIyIDEwMiAwIi8+CiA8cGF0aCBkPSJNLTIwIDUyYzM0LTIyIDY4LTIyIDEwMiAwczY4IDIyIDEwMiAwIDY4LTIyIDEwMiAwIDY4IDIyIDEwMiAwIi8+CiA8cGF0aCBkPSJNLTIwIDcyYzM0LTIyIDY4LTIyIDEwMiAwczY4IDIyIDEwMiAwIDY4LTIyIDEwMiAwIDY4IDIyIDEwMiAwIi8+CiA8cGF0aCBkPSJNLTIwIDE0MmMzNC0yMiA2OC0yMiAxMDIgMHM2OCAyMiAxMDIgMCA2OC0yMiAxMDIgMCA2OCAyMiAxMDIgMCIvPgogPHBhdGggZD0iTS0yMCAxNjJjMzQtMjIgNjgtMjIgMTAyIDBzNjggMjIgMTAyIDAgNjgtMjIgMTAyIDAgNjggMjIgMTAyIDAiLz4KIDxwYXRoIGQ9Ik0tMjAgMTgyYzM0LTIyIDY4LTIyIDEwMiAwczY4IDIyIDEwMiAwIDY4LTIyIDEwMiAwIDY4IDIyIDEwMiAwIi8+CjwvZz4KPGcgZmlsbD0iIzJBOEZEMCIgb3BhY2l0eT0iLjE2Ij4KIDxjaXJjbGUgY3g9IjgwIiBjeT0iMTEyIiByPSIyIi8+PGNpcmNsZSBjeD0iMjQwIiBjeT0iOTIiIHI9IjIiLz48Y2lyY2xlIGN4PSIxNjAiIGN5PSIyMDIiIHI9IjIiLz4KPC9nPgo8L3N2Zz4=),linear-gradient(180deg,#2A4783 0%,#223B70 100%);background-size:320px 220px,auto}
+.hero{position:relative;min-height:190px;align-items:flex-start}.hero>div:first-child{position:relative;z-index:1;max-width:46%}.hero .hero-art{position:absolute;right:215px;top:0;bottom:0;width:auto;height:100%;max-width:62%;pointer-events:none}.hero .big{position:relative;z-index:1;align-self:flex-end}
+.emptyx{display:flex;flex-direction:column;align-items:center;gap:6px;padding:26px 0;color:var(--mute);text-align:center}.emptyx img{width:200px;max-width:70%;height:auto}.emptyx.sm img{width:120px}.emptyx p{margin:0;font-size:15px}
+@media(max-width:900px){.hero .hero-art{display:none}.hero>div:first-child{max-width:100%}}
+@media(min-width:901px) and (max-height:980px){#nav button small{display:none}#nav button{padding:8px 12px}}
+
+/* ===== 訪談寫法 / 管理層表格 ===== */
+.iv-btn{background:var(--accent-soft);border-color:var(--accent);color:#1F4AB5;font-weight:600}
+.iv-modal{max-width:1120px}
+.iv-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px}
+.iv-left{display:flex;flex-direction:column;gap:14px;min-width:0}
+.iv-right{min-width:0}
+.iv-steps{display:flex;gap:6px;flex-wrap:wrap}
+.iv-steps button{width:34px;height:34px;padding:0;border-radius:50%;font:500 13px var(--f-mono)}
+.iv-steps button.done{background:var(--accent-soft);border-color:var(--accent);color:#1F4AB5}
+.iv-steps button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.iv-q{background:var(--soft);border-radius:var(--r);padding:16px 18px}
+.iv-n{font:500 12.5px var(--f-mono);color:var(--accent);letter-spacing:.1em}
+.iv-q h3{margin:4px 0 4px;font-size:19px;line-height:1.4}
+.iv-fields{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.iv-fields select,.iv-fields input,.iv-fields textarea{width:100%}
+.iv-nav{display:flex;gap:8px}
+.iv-sum{margin:6px 0 0;padding:10px 14px 10px 30px;background:var(--soft);border-radius:var(--r);font-size:15px;line-height:1.7}
+#ivPrompt,#mp{width:100%;font:13px/1.55 var(--f-mono)}
+#ivPrompt{height:300px}
+#mp{height:360px}
+.mgt{border-collapse:collapse;width:100%;font-size:15px;background:#fff}
+.mgt th,.mgt td{border:1px solid var(--line);padding:9px 12px;vertical-align:top;text-align:left;line-height:1.7}
+.mgt th{background:var(--soft);white-space:nowrap}
+@media(max-width:900px){.iv-grid{grid-template-columns:1fr}#ivPrompt{height:220px}}
 /* common */
 .panel{background:var(--card);border:1px solid var(--edge);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
@@ -254,19 +302,19 @@ details summary{cursor:pointer}
 <div class="app">
 <aside class="sidebar">
   <div class="brand">
-    <div class="brand-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 15c3-3 6 3 10 0s7 3 10 0"/><path d="M2 9c3-3 6 3 10 0s7 3 10 0"/></svg></div>
+    <div class="brand-mark"><img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMTYwIiBmaWxsPSJub25lIj4KPGcgc3Ryb2tlPSIjMkY1RkQwIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgPHBhdGggZD0iTTI0IDgwQzI0IDQ5LjEgNDkuMSAyNCA4MCAyNHM1NiAyNS4xIDU2IDU2Ii8+CiAgPHBhdGggZD0iTTI0IDgwYzAgMzAuOSAyNS4xIDU2IDU2IDU2czU2LTI1LjEgNTYtNTYiLz4KICA8cGF0aCBkPSJNNDIgODBjMC0yMSAxNy0zOCAzOC0zOHMzOCAxNyAzOCAzOCIvPgogIDxwYXRoIGQ9Ik00MiA4MGMwIDIxIDE3IDM4IDM4IDM4czM4LTE3IDM4LTM4IiBzdHJva2U9IiMyQThGRDAiLz4KPC9nPgo8Y2lyY2xlIGN4PSI4MCIgY3k9IjgwIiByPSI2IiBmaWxsPSIjQzk4QTFGIi8+Cjwvc3ZnPg=="></div>
     <div><strong>工作水池</strong><small>FINANCE IT WORKSPACE</small></div>
   </div>
   <div class="side">
     <div class="eyebrow">WORKSPACE</div>
     <nav id="nav">
-      <button data-tab="timeline" class="on"><em>01</em><span><b>時間軸</b><small>TIMELINE</small></span></button>
-      <button data-tab="pool"><em>02</em><span><b>水池與週報</b><small>POOL · REPORT</small></span></button>
-      <button data-tab="atm"><em>03</em><span><b>ATM 參考</b><small>ATM SIGNALS</small></span></button>
-      <button data-tab="cards"><em>04</em><span><b>卡片庫</b><small>CARD LIBRARY</small></span></button>
-      <button data-tab="release"><em>05</em><span><b>版本與排程</b><small>RELEASE · SCHEDULE</small></span></button>
-      <button data-tab="contracts"><em>06</em><span><b>合約與定期</b><small>CONTRACTS</small></span></button>
-      <button data-tab="import"><em>07</em><span><b>匯入</b><small>IMPORT</small></span></button>
+      <button data-tab="timeline" class="on"><i class="ni" aria-hidden="true"></i><span><b>時間軸</b><small>TIMELINE</small></span></button>
+      <button data-tab="pool"><i class="ni" aria-hidden="true"></i><span><b>水池與週報</b><small>POOL · REPORT</small></span></button>
+      <button data-tab="atm"><i class="ni" aria-hidden="true"></i><span><b>ATM 參考</b><small>ATM SIGNALS</small></span></button>
+      <button data-tab="cards"><i class="ni" aria-hidden="true"></i><span><b>卡片庫</b><small>CARD LIBRARY</small></span></button>
+      <button data-tab="release"><i class="ni" aria-hidden="true"></i><span><b>版本與排程</b><small>RELEASE · SCHEDULE</small></span></button>
+      <button data-tab="contracts"><i class="ni" aria-hidden="true"></i><span><b>合約與定期</b><small>CONTRACTS</small></span></button>
+      <button data-tab="import"><i class="ni" aria-hidden="true"></i><span><b>匯入</b><small>IMPORT</small></span></button>
     </nav>
   </div>
   <div class="snap" id="snap"></div>
@@ -611,7 +659,7 @@ function renderTimeline(){
   <div class="tl"><div class="tl-inner">
     <div class="tl-head"><div style="padding:10px;font-weight:700;border-right:1.5px solid var(--line)">${fmtD(start).slice(5)} ～ ${fmtD(end).slice(5)}</div><div class="tl-scale">${ticks}${todayPos>=0&&todayPos<=100?`<div class="tl-todaylbl ${scale==='quarter'?'q':''}" style="left:${todayPos}%">今天 ${md(TODAY)}</div>`:''}</div></div>
     <div style="position:relative">
-      ${lanesHtml || '<div class="muted" style="padding:40px;text-align:center">這段期間沒有卡片</div>'}
+      ${lanesHtml || emptyX('cards','這段期間沒有卡片')}
       ${todayPos>=0&&todayPos<=100?`<div style="position:absolute;top:0;bottom:0;left:150px;right:0;pointer-events:none"><div class="tl-today" style="left:${todayPos}%"></div></div>`:''}
     </div>
   </div></div>`;
@@ -640,16 +688,16 @@ function dueThisWeek(c, wk){
 function renderPool(){
   const wk=CUR_WEEK, ids=poolIds(wk), inPool=new Set(ids);
   const prevIds=new Set(poolIds(shiftWeek(wk,-1)));
-  let lib=allCards().filter(c=>!isDone(c) || inPool.has(c['卡片ID']));
+  let lib=allCards().filter(c=>(!isDone(c) || inPool.has(c['卡片ID'])) && POOL_TYPES.includes(c['卡片類型']));
   const farLimit=addDays(TODAY,42); let farHidden=0;
-  if(libFilter==='all'){ const before=lib.length; lib=lib.filter(c=>inPool.has(c['卡片ID'])||c['卡片類型']!=='定期事項'||!parseD(c['截止日'])||parseD(c['截止日'])<=farLimit); farHidden=before-lib.length; }
+  // 卡片庫只留專案與維修單（其餘類型仍在各分頁管理）
   if(libFilter==='carry') lib=lib.filter(c=>prevIds.has(c['卡片ID']) && !isDone(c));
   else if(libFilter==='due') lib=lib.filter(c=>dueThisWeek(c,wk));
-  else if(TYPES.includes(libFilter)) lib=lib.filter(c=>c['卡片類型']===libFilter);
+  else if(POOL_TYPES.includes(libFilter)) lib=lib.filter(c=>c['卡片類型']===libFilter);
   if(libSearch) lib=lib.filter(c=>(c['標題']+c['關聯單號']+c['廠商']+c['負責人']).toLowerCase().includes(libSearch.toLowerCase()));
   lib.sort((a,b)=>(inPool.has(a['卡片ID'])-inPool.has(b['卡片ID'])) || ((parseD(a['截止日'])||9e15)-(parseD(b['截止日'])||9e15)));
   const written = ids.filter(id=>{ const p=progOf(wk,id); return p && String(p['本週進展']).trim(); }).length;
-  const carryMissing=[...prevIds].filter(id=>{const c=cardById(id); return c && !isDone(c) && !inPool.has(id);}).length;
+  const carryMissing=[...prevIds].filter(id=>{const c=cardById(id); return c && POOL_TYPES.includes(c['卡片類型']) && !isDone(c) && !inPool.has(id);}).length;
 
   const miniHtml = c => {
     const inp=inPool.has(c['卡片ID']);
@@ -662,7 +710,10 @@ function renderPool(){
     </div>`;
   };
   const pcardHtml = id => {
-    const c=cardById(id), p=progOf(wk,id)||{}, k=`${wk}|${id}`, d=draft[k]||{};
+    const c=cardById(id), p=progOf(wk,id)||{}, k=`${wk}|${id}`;
+    if(!progOf(wk,id) && !draft[k] && ticketSeed(c) && !hasAnyProgress(id)) draft[k]={狀態:c['狀態'],本週進展:ticketSeed(c),風險與協同:'',下週預計:''};
+    const d=draft[k]||{};
+    const seeded = c['卡片類型']==='維修單' && !!ticketSeed(c) && String(d['本週進展']!==undefined?d['本週進展']:(p['本週進展']||'')).trim()===ticketSeed(c).trim();
     const v=f=> d[f]!==undefined?d[f]:(p[f]??'');
     const st = d['狀態']!==undefined?d['狀態']:(p['狀態']||c['狀態']);
     const dirty = !!draft[k];
@@ -673,14 +724,14 @@ function renderPool(){
         <span class="tag T-${esc(c['卡片類型'])}">${esc(c['卡片類型'])}</span>
         <span class="ti" data-open="${esc(id)}">${esc(c['標題'])}</span>
         ${c['關聯單號']?`<span class="mono muted">${esc(c['關聯單號'])}</span>`:''}
-        <span class="acts"><select data-f="狀態">${statusList(c['卡片類型']).map(s=>`<option ${s===st?'selected':''}>${s}</option>`).join('')}</select>
+        <span class="acts">${ivKind(c)!=='other'?`<button class="sm iv-btn" data-ivopen="${esc(id)}" title="用選單一題一題訪談，產出管理層週報 prompt">✨ 訪談寫法</button>`:''}<select data-f="狀態">${statusList(c['卡片類型']).map(s=>`<option ${s===st?'selected':''}>${s}</option>`).join('')}</select>
         <span class="${dirty?'unsaved':'saved'}">${dirty?'未儲存':(p['本週進展']?'✓ 已寫':'')}</span>
         <button class="sm primary" data-save="${esc(id)}">儲存</button>
         <button class="sm ghost" data-rm="${esc(id)}" title="移出水池">✕</button></span>
       </div>
       ${re.length?`<div class="warnbox">觀察期再發：${re.map(r=>esc(r)).join('；')}</div>`:''}
       <div class="grid3">
-        <div><label>本週進展 <span class="req">*</span></label><textarea rows="3" data-f="本週進展">${esc(v('本週進展'))}</textarea></div>
+        <div><label>本週進展 <span class="req">*</span>${seeded?' <span class="muted" style="font-weight:400">已帶入故障原因</span>':''}</label><textarea rows="${seeded?5:3}" data-f="本週進展">${esc(v('本週進展'))}</textarea></div>
         <div><label>風險與協同</label><textarea rows="3" data-f="風險與協同">${esc(v('風險與協同'))}</textarea></div>
         <div><label>下週預計</label><textarea rows="3" data-f="下週預計">${esc(v('下週預計'))}</textarea></div>
       </div>
@@ -689,6 +740,7 @@ function renderPool(){
 
   $('#tab-pool').innerHTML = `
   <div class="hero">
+    <img class="hero-art" alt="" src="${HERO_SVG}">
     <div><div class="eyebrow">WEEKLY POOL <span>✳</span></div><h2>拖進水池，一張張寫好，週報自然成形。</h2><p>依關聯單號整理進度，判斷與審核始終由你主導。</p><p class="mono" style="margin-top:10px;color:#C9E1FF">本期工作週　${fmtD(weekStart(wk))} — ${fmtD(addDays(weekStart(wk),6))}　週四至週三</p></div>
     <div class="big"><span>WRITTEN</span><b>${written} / ${ids.length}</b><span>${esc(wk)} ・ ${md(weekStart(wk))}–${md(addDays(weekStart(wk),6))}</span></div>
   </div>
@@ -706,13 +758,13 @@ function renderPool(){
       <h3>卡片庫</h3>
       <input id="libSearch" placeholder="搜尋標題、單號、廠商、負責人" value="${esc(libSearch)}" style="width:100%;margin-bottom:8px">
       <div class="chips" style="margin-bottom:10px">
-        ${[['all','全部'],['carry',`上週未結案${carryMissing?`（${carryMissing}）`:''}`],['due','本週到期'],...TYPES.map(t=>[t,t])].map(([k,t])=>`<button class="chip ${libFilter===k?'on':''}" data-lf="${esc(k)}">${esc(t)}</button>`).join('')}
+        ${[['all','全部'],['carry',`上週未結案${carryMissing?`（${carryMissing}）`:''}`],['due','本週到期'],...POOL_TYPES.map(t=>[t,t])].map(([k,t])=>`<button class="chip ${libFilter===k?'on':''}" data-lf="${esc(k)}">${esc(t)}</button>`).join('')}
       </div>
       ${farHidden?`<div class="muted" style="font-size:14px;margin-bottom:8px">另有 ${farHidden} 張 6 週後才到期的定期卡，點「定期事項」查看</div>`:''}
-      <div class="lib" id="lib">${lib.map(miniHtml).join('')||'<div class="muted">沒有符合的卡片</div>'}</div>
+      <div class="lib" id="lib">${lib.map(miniHtml).join('')||emptyX('cards','沒有符合的卡片',1)}</div>
     </div>
     <div>
-      <div class="drop" id="drop"><div class="drop-hint">放開以加入本週水池</div>${ids.length?ids.map(pcardHtml).join(''):'<div class="empty">把左邊的卡片拖進來，或按卡片上的 ＋</div>'}</div>
+      <div class="drop" id="drop"><div class="drop-hint">放開以加入本週水池</div>${ids.length?ids.map(pcardHtml).join(''):emptyX('imp','把左邊的卡片拖進來，或按卡片上的 ＋',1)}</div>
       <div class="row" style="margin-top:12px">
         <button id="saveAll">全部儲存</button>
         <span class="sp"></span>
@@ -744,8 +796,9 @@ function renderPool(){
   });
   drop.addEventListener('change',e=>{ if(e.target.dataset.f==='狀態') e.target.dispatchEvent(new Event('input',{bubbles:true})); });
   drop.onclick=async e=>{
-    const s=e.target.closest('[data-save]'), r=e.target.closest('[data-rm]'), o=e.target.closest('[data-open]');
-    if(s) await saveProgress([s.dataset.save]);
+    const s=e.target.closest('[data-save]'), r=e.target.closest('[data-rm]'), o=e.target.closest('[data-open]'), iv=e.target.closest('[data-ivopen]');
+    if(iv) openInterview(iv.dataset.ivopen);
+    else if(s) await saveProgress([s.dataset.save]);
     else if(r) await removeFromPool(r.dataset.rm);
     else if(o) openCard(cardById(o.dataset.open));
   };
@@ -753,8 +806,24 @@ function renderPool(){
   $('#genReport').onclick=()=>showReport(wk);
   renderSnap();
 }
+/** 維修單的「原本故障原因」：故障類別 + 描述（描述已含各次故障的日期、局名、機台與現象） */
+function ticketSeed(c){
+  if(!c || c['卡片類型']!=='維修單') return '';
+  const t=[]; if(String(c['故障類別']||'').trim()) t.push('故障類別：'+String(c['故障類別']).trim());
+  if(String(c['描述']||'').trim()) t.push('故障原因／現象：\n'+String(c['描述']).trim());
+  return t.join('\n');
+}
+const hasAnyProgress = id => S.Progress_Log.some(x=>x['卡片ID']===id && String(x['本週進展']).trim());
+/** 維修單首次進水池：把故障原因直接存成本週進展（可再修改），週報才有內容 */
+async function seedTicket(id){
+  const c=cardById(id), s=ticketSeed(c); if(!s || hasAnyProgress(id) || progOf(CUR_WEEK,id)) return;
+  const row={週別:CUR_WEEK,卡片ID:id,狀態:c['狀態'],本週進展:s,風險與協同:'',下週預計:'',寫入時間:nowISO()};
+  S.Progress_Log.push(row);
+  await persist('saveProgress',{rows:[row]});
+}
 async function addToPool(id){
   const wk=CUR_WEEK, ids=poolIds(wk); if(ids.includes(id)) return;
+  await seedTicket(id);
   ids.push(id); await setPool(wk,ids);
 }
 async function placeInPool(id, beforeId){
@@ -764,8 +833,9 @@ async function placeInPool(id, beforeId){
   const at=beforeId?ids.indexOf(beforeId):-1;
   if(at>=0) ids.splice(at,0,id); else ids.push(id);
   if(had && ids.join()===poolIds(wk).join()) return;
+  if(!had) await seedTicket(id);
   await setPool(wk,ids);
-  if(!had) toast('已加入本週水池');
+  if(!had) toast(ticketSeed(cardById(id))?'已加入本週水池，並帶入故障原因（可修改）':'已加入本週水池');
 }
 function endDrag(){
   document.body.classList.remove('dragging-lib');
@@ -847,6 +917,27 @@ function buildReport(wk){
   const ctx = logs.map(l=>{const c=cardById(l['卡片ID']); return `- ${c['版本ID']?'版本'+c['版本ID']+'｜':''}${c['_v']==='RM'?'版本整體':(c['關聯單號']||'（無單號）')}｜${c['標題']}｜類型:${c['卡片類型']}｜廠商:${c['廠商']||'-'}｜負責:${c['負責人']||'-'}｜狀態:${l['狀態']}｜截止:${String(c['截止日']||'-').slice(0,10)}`;}).join('\n');
   return {text, ctx, count:logs.length};
 }
+function mgmtPanel(wk){
+  const m=mgmtItems(wk), pr=m.done.length?mgmtPrompt(m.done.map(x=>x.block)):'';
+  const t=replyDraft[wk+'#t']||'';
+  return `<div class="panel" style="margin-top:16px">
+    <div class="row"><div><div class="eyebrow">04 / MANAGER TABLE</div><h3 style="margin:4px 0 0">管理層週報表格（處長／科長版）</h3></div><span class="sp"></span><span class="muted">${m.done.length} 張卡納入</span></div>
+    ${m.todo.length?`<div class="warnbox" style="margin-top:12px">尚未用選單訪談：${m.todo.map(esc).join('、')}。到「水池與週報」按卡片上的 ✨ 訪談寫法，補上階段、阻礙、時程，長官表格會更完整。</div>`:''}
+    ${m.done.length?`<div class="copilot">
+      <div>
+        <label class="label" for="mp">管理層表格 prompt（規則＋本週所有卡片）</label>
+        <textarea id="mp" readonly>${esc(pr)}</textarea>
+        <div class="row" style="margin-top:9px"><button class="primary" id="cpMgmt">一鍵複製 prompt</button><a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">前往 Gemini ↗</a><a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">前往 Claude ↗</a></div>
+      </div>
+      <div>
+        <label class="label" for="mreply">貼回 AI 產出的表格</label>
+        <textarea id="mreply" placeholder="把 AI 回覆的 Markdown 表格貼在這裡">${esc(t)}</textarea>
+        <div class="row" style="margin-top:9px"><span class="muted" style="font-size:14px">貼上後下方會即時預覽成表格</span><span class="sp"></span><button class="primary" id="saveMgmt">表格存入歷史</button></div>
+      </div>
+    </div>
+    <div id="mprev" style="margin-top:14px">${mdTableHtml(t)}</div>`:'<div class="muted" style="margin-top:12px">水池裡還沒有任何卡片有進度或訪談內容。</div>'}
+  </div>`;
+}
 function polishPrompt(r){
   return `你是台灣金融機構資訊單位的專案管理助理，請將下方「週報原文」潤飾成可直接呈報主管的正式週報。
 
@@ -882,8 +973,9 @@ function showReport(wk){
     ${r.count?'':'<div class="warnbox">這週還沒有任何已儲存的進度，週報會是空的。</div>'}
     <pre class="report">${esc(r.text)}</pre>
   </div>
+  ${mgmtPanel(wk)}
   <div class="panel" style="margin-top:16px">
-    <div class="row"><div><div class="eyebrow">04 / AI COPILOT</div><h3 style="margin:4px 0 0">週報潤飾工作台</h3></div><span class="sp"></span><span class="muted">人工審查、手動複製；系統不會自動傳送資料</span></div>
+    <div class="row"><div><div class="eyebrow">05 / AI COPILOT</div><h3 style="margin:4px 0 0">週報潤飾工作台</h3></div><span class="sp"></span><span class="muted">人工審查、手動複製；系統不會自動傳送資料</span></div>
     <div class="warnbox" style="margin-top:12px">複製前請依單位規範確認內容；AI 回覆的事實與數字仍須逐項核對。</div>
     <div class="copilot">
       <div>
@@ -904,6 +996,14 @@ function showReport(wk){
   drawChecks();
   $('#reply').oninput=e=>{ replyDraft[wk]=e.target.value; drawChecks(); };
   $('#cpText').onclick=()=>copy(r.text,'週報原文已複製');
+  if($('#cpMgmt')){
+    const mi=mgmtItems(wk);
+    $('#cpMgmt').onclick=()=>copy(mgmtPrompt(mi.done.map(x=>x.block)),'管理層表格 prompt 已複製，貼給 AI 即可');
+    $('#mreply').oninput=e=>{ replyDraft[wk+'#t']=e.target.value; $('#mprev').innerHTML=mdTableHtml(e.target.value); };
+    $('#saveMgmt').onclick=()=>{ const tx=$('#mreply').value.trim(); if(!tx){ toast('請先貼上 AI 產出的表格',true); return; }
+      if(!/^\s*\|.+\|/m.test(tx) && !confirm('貼上的內容看起來不是表格，仍要存入？')) return;
+      delete replyDraft[wk+'#t']; save(tx,'管理層表格已存入週報歷史'); };
+  }
   $('#cpPrompt').onclick=()=>copy(prompt,'prompt 包已複製，貼給 AI 潤飾即可');
   const save=async(text,msg)=>{ const row={週別:wk,產出時間:nowISO(),週報原文:text}; S.Report_History.push(row); await persist('saveReport',{row},msg); showReport(wk); };
   $('#saveRep').onclick=()=>save(r.text,'原文已存入週報歷史');
@@ -1008,7 +1108,7 @@ function renderAtm(){
     ${ATM.note?`<span class="unsaved">${esc(ATM.note)}</span>`:''}
     <button class="sm" id="atmReload">重新讀取 ATM 資料</button>
   </div>
-  <div class="alerts">${open.map(alertHtml).join('')||'<div class="muted">目前沒有新的燈號</div>'}</div>
+  <div class="alerts">${open.map(alertHtml).join('')||emptyX('atm','目前沒有新的燈號')}</div>
   ${covered.length?`<details style="margin-top:12px"><summary class="label" style="cursor:pointer">已有維修單的燈號（${covered.length}）</summary><div class="alerts" style="margin-top:10px">${covered.map(alertHtml).join('')}</div></details>`:''}
   <div class="panel" style="margin-top:20px">
     <div class="toolbar">
@@ -1073,7 +1173,7 @@ function renderCards(){
       <td style="font-weight:500">${esc(c['標題'])}</td><td class="mono">${esc(c['關聯單號'])}</td><td>${esc(shortVendor(c['廠商']))}</td><td>${esc(c['負責人'])}</td>
       <td><span class="${stClass(c['狀態'])}">${esc(c['狀態'])}</span></td>
       <td class="mono" style="white-space:nowrap">${esc(String(c['開始日']).slice(0,10))}${c['開始日']||c['截止日']?' → ':''}${esc(String(c['截止日']).slice(0,10))}</td>
-      <td class="muted" style="font-size:14px">${esc(c['來源'])}</td></tr>`).join('')||'<tr><td colspan="8" class="muted">沒有卡片</td></tr>'}</tbody>
+      <td class="muted" style="font-size:14px">${esc(c['來源'])}</td></tr>`).join('')||'<tr><td colspan="8">'+emptyX('cards','沒有卡片',1)+'</td></tr>'}</tbody>
   </table></div>`;
   $('#cq').onchange=e=>{cardQ.q=e.target.value; renderCards();};
   $$('[data-ct]').forEach(b=>b.onclick=()=>{cardQ.type=b.dataset.ct; renderCards();});
@@ -1400,7 +1500,7 @@ function renderRelease(){
   <div class="toolbar"><h2 style="margin:0">Release 版本與階段</h2><span class="muted">${tbl('Release_Master').length} 個版本列・${tbl('Release_Stages').length} 個階段</span>
     <label class="row" style="gap:6px"><input type="checkbox" id="relDone" ${relShowDone?'checked':''}> 顯示已完成版本</label><span class="sp"></span>
     <button class="primary" id="rmNew">＋ 新增版本</button></div>
-  ${keys.map(verHtml).join('')||'<div class="panel muted">沒有進行中的版本</div>'}
+  ${keys.map(verHtml).join('')||'<div class="panel">'+emptyX('cards','沒有進行中的版本',1)+'</div>'}
   <div class="toolbar" style="margin-top:24px"><h2 style="margin:0">資安與專案排程</h2><span class="muted">${sp.length} 項，每項自動成為一張資安專案卡</span><span class="sp"></span><button class="primary" id="spNew">＋ 新增排程</button></div>
   <div class="panel" style="overflow-x:auto"><table class="list"><thead><tr><th>檢核代碼</th><th>作業事項</th><th>性質</th><th>主責</th><th>週期</th><th>期間</th><th>階段</th></tr></thead><tbody>
     ${sp.map(r=>`<tr class="click" data-sp="${esc(r['列ID'])}"><td class="mono">${esc(r['檢核代碼']||'')}</td><td style="font-weight:500">${esc(r['作業事項名稱'])}<div class="muted" style="font-size:13px">${esc(r['適用範圍/系統']||'')}</div></td><td>${esc(r['事項性質']||'')}</td><td>${esc(r['主責同仁']||'')}</td><td>${esc(r['週期頻率']||'')}</td><td class="mono" style="white-space:nowrap">${esc(ds(r['預計起日']))}<br>${esc(ds(r['預計迄日']))}</td><td><span class="${stClass(spToCard(r['作業階段']))}">${esc(r['作業階段']||'')}</span></td></tr>`).join('')||'<tr><td colspan="7" class="muted">還沒有排程，按「新增排程」</td></tr>'}
@@ -1628,7 +1728,7 @@ function renderImport(){
       <h3>貼上 JSON 或選擇檔案</h3>
       <textarea id="impText" rows="14" class="mono" placeholder='{"cards":[...]}'></textarea>
       <div class="row" style="margin-top:8px"><input type="file" id="impFile" accept=".json,application/json"><span class="sp"></span><button class="primary" id="impCheck">檢查並預覽</button></div>
-      <div id="impPrev" style="margin-top:14px"></div>
+      <div id="impPrev" style="margin-top:14px">${emptyX('imp','貼上 JSON 後按「檢查並預覽」',1)}</div>
     </div>
     <div class="panel">
       <h3>產生 JSON 的方式</h3>
@@ -1692,7 +1792,7 @@ async function doImport(){
   if(rows.length) await persist('importCards',{rows});
   const n = 0;
   toast(`已匯入 ${rows.length} 張卡片${ks.length?`、${ks.length} 份合約`:''}${n?`，並產生 ${n} 張定期卡`:''}`);
-  IMP=null; $('#impText').value=''; $('#impPrev').innerHTML='';
+  IMP=null; $('#impText').value=''; $('#impPrev').innerHTML=emptyX('imp','貼上 JSON 後按「檢查並預覽」',1);
 }
 
 /* =========================================================
@@ -1702,6 +1802,7 @@ function openSettings(){
   const root=$('#modalRoot');
   root.innerHTML=`<div class="mask"><div class="modal" style="max-width:620px">
     <div class="row" style="margin-bottom:12px"><h2 style="margin:0">連線設定</h2><span class="sp"></span><button class="ghost" id="mClose">✕</button></div>
+    ${live()?'':emptyX('conn','目前是示範模式，資料不會儲存',1)}
     <p class="muted" style="margin-top:0">網址與密碼只存在這台電腦的瀏覽器，不會出現在 GitHub 的程式碼裡。</p>
     <div class="form" style="grid-template-columns:1fr">
       <div><label>Apps Script 網頁應用程式網址</label><input id="sUrl" class="mono" value="${esc(ls.get(LS.url,''))}" placeholder="https://script.google.com/macros/s/…/exec"></div>
@@ -1717,6 +1818,154 @@ function openSettings(){
 /* =========================================================
    示範資料（全部虛構，不含任何真實局號或單號）
    ========================================================= */
+const ART={"cards": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgMTgwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgZmlsbD0ibm9uZSI+CjxnIHN0cm9rZT0iIzI2M0Y3OCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiA8cmVjdCB4PSI3NSIgeT0iMzQiIHdpZHRoPSI5MSIgaGVpZ2h0PSIxMDgiIHJ4PSI5Ii8+CiA8cGF0aCBkPSJNOTQgNjJoNTNNOTQgNzloNTNNOTQgOTZoMzAiIHN0cm9rZT0iIzJGNUZEMCIvPgogPHBhdGggZD0iTTY2IDQ4djg3YTggOCAwIDAgMCA4IDhoNzgiIHN0cm9rZT0iI0Q1REZFRSIvPgogPHBhdGggZD0iTTEwMyAxMTloMzUiIHN0cm9rZT0iI0Q1REZFRSIvPgo8L2c+CjxjaXJjbGUgY3g9IjE2NiIgY3k9IjEyNiIgcj0iMTgiIGZpbGw9IiNFREYyRjkiIHN0cm9rZT0iIzJGNUZEMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xNjYgMTE3djE4TTE1NyAxMjZoMTgiIHN0cm9rZT0iIzJGNUZEMCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNNDUgMTU1YzI1LTEwIDQ4LTEwIDczIDBzNDggMTAgNzMgMCIgc3Ryb2tlPSIjRDVERkVFIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+", "atm": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgMTgwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgZmlsbD0ibm9uZSI+CjxnIHN0cm9rZT0iIzI2M0Y3OCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiA8cmVjdCB4PSI3MyIgeT0iMjAiIHdpZHRoPSI5NCIgaGVpZ2h0PSIxMjgiIHJ4PSI5Ii8+CiA8cmVjdCB4PSI5MSIgeT0iMzgiIHdpZHRoPSI1OCIgaGVpZ2h0PSIzNCIgcng9IjMiIHN0cm9rZT0iIzJGNUZEMCIvPgogPHBhdGggZD0iTTEwMSA1MGgzOE0xMDEgNjBoMjciIHN0cm9rZT0iIzJBOEZEMCIvPgogPHJlY3QgeD0iOTQiIHk9Ijg4IiB3aWR0aD0iNTIiIGhlaWdodD0iMTIiIHJ4PSIyIiBzdHJva2U9IiMyRjVGRDAiLz4KIDxwYXRoIGQ9Ik05NiAxMTZoNDhNMTA3IDEzMGgyNiIgc3Ryb2tlPSIjRDVERkVFIi8+CjwvZz4KPGNpcmNsZSBjeD0iMTcxIiBjeT0iMTI0IiByPSIyMCIgZmlsbD0iI0VERjJGOSIgc3Ryb2tlPSIjMUU4RTc0IiBzdHJva2Utd2lkdGg9IjIuNSIvPgo8cGF0aCBkPSJtMTYxIDEyNCA3IDcgMTMtMTUiIHN0cm9rZT0iIzFFOEU3NCIgc3Ryb2tlLXdpZHRoPSIyLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNNDIgMTU4YzI1LTEwIDQ4LTEwIDczIDBzNDggMTAgNzMgMCIgc3Ryb2tlPSIjRDVERkVFIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+", "imp": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgMTgwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgZmlsbD0ibm9uZSI+CjxnIHN0cm9rZT0iIzI2M0Y3OCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiA8cGF0aCBkPSJNNjggNDhoNjFsMTUgMTZoMjh2NjVINjh6Ii8+CiA8cGF0aCBkPSJNNjggNDh2LTloNThsMTUgMTZoMzEiIHN0cm9rZT0iI0Q1REZFRSIvPgogPHBhdGggZD0iTTEyMCA3N3YzNk0xMDYgOTlsMTQgMTQgMTQtMTQiIHN0cm9rZT0iIzJGNUZEMCIgc3Ryb2tlLXdpZHRoPSIyLjgiLz4KIDxwYXRoIGQ9Ik05MSAxMjhoNjgiIHN0cm9rZT0iI0Q1REZFRSIvPgo8L2c+CjxjaXJjbGUgY3g9IjE3NCIgY3k9IjQ1IiByPSIxMyIgZmlsbD0iI0UzRUJGQiIvPgo8cGF0aCBkPSJNMTc0IDM4djE0TTE2NyA0NWgxNCIgc3Ryb2tlPSIjMkY1RkQwIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNNDIgMTU4YzI1LTEwIDQ4LTEwIDczIDBzNDggMTAgNzMgMCIgc3Ryb2tlPSIjRDVERkVFIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+", "conn": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgMTgwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjE4MCIgZmlsbD0ibm9uZSI+CjxnIHN0cm9rZT0iIzI2M0Y3OCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiA8cmVjdCB4PSI0NiIgeT0iNDciIHdpZHRoPSI2MCIgaGVpZ2h0PSI0OCIgcng9IjciLz4KIDxyZWN0IHg9IjEzNCIgeT0iNDciIHdpZHRoPSI2MCIgaGVpZ2h0PSI0OCIgcng9IjciLz4KIDxwYXRoIGQ9Ik01OCA2MWgzNk01OCA3M2gyNE0xNDYgNjFoMzZNMTQ2IDczaDI0IiBzdHJva2U9IiNENURGRUUiLz4KIDxwYXRoIGQ9Ik0xMDYgNzFoMTJNMTIyIDcxaDEyIiBzdHJva2U9IiMyRjVGRDAiIHN0cm9rZS1kYXNoYXJyYXk9IjMgNCIvPgogPHBhdGggZD0iTTc2IDk1djIyaDg4Vjk1IiBzdHJva2U9IiNENURGRUUiLz4KIDxwYXRoIGQ9Ik0xMDYgMTE3djEyTTEzNCAxMTd2MTIiIHN0cm9rZT0iI0Q1REZFRSIvPgo8L2c+CjxjaXJjbGUgY3g9IjEyMCIgY3k9IjcxIiByPSIxNyIgZmlsbD0iI0VERjJGOSIgc3Ryb2tlPSIjQzk4QTFGIiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0ibTExMyA2NCAxNCAxNE0xMjcgNjRsLTE0IDE0IiBzdHJva2U9IiNDOThBMUYiIHN0cm9rZS13aWR0aD0iMi4zIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPHBhdGggZD0iTTQyIDE1OGMyNS0xMCA0OC0xMCA3MyAwczQ4IDEwIDczIDAiIHN0cm9rZT0iI0Q1REZFRSIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPg=="};
+const HERO_SVG="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5NjAgMjQwIiBmaWxsPSJub25lIj4KPGcgb3BhY2l0eT0iLjk1Ij4KICA8cGF0aCBkPSJNMzkwIDE4OGM5NS00MiAxNzYtNDIgMjcxIDBzMTc2IDQyIDI3MSAwIiBzdHJva2U9IiM3Rjk4Q0MiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik0zOTAgMjA3Yzk1LTQyIDE3Ni00MiAyNzEgMHMxNzYgNDIgMjcxIDAiIHN0cm9rZT0iIzVGN0RCQiIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTQ0MCAxNjBjNzUtMzMgMTQwLTMzIDIxNSAwczE0MCAzMyAyMTUgMCIgc3Ryb2tlPSIjOENDNEZGIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cGF0aCBkPSJNNTAwIDEzNmM2MC0yNiAxMTItMjYgMTcyIDBzMTEyIDI2IDE3MiAwIiBzdHJva2U9IiM2RkI0RTgiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik01NjAgMTEyYzQzLTE5IDgyLTE5IDEyNSAwczgyIDE5IDEyNSAwIiBzdHJva2U9IiM3Rjk4Q0MiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwYXRoIGQ9Ik02MTAgOTBjMjktMTMgNTUtMTMgODQgMHM1NSAxMyA4NCAwIiBzdHJva2U9IiM4Q0M0RkYiIHN0cm9rZS13aWR0aD0iMiIvPgo8L2c+CjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDcxMCA0MikiIHN0cm9rZT0iI0UzRUJGQiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxMTIiIGhlaWdodD0iMTQ1IiByeD0iOSIvPgogIDxyZWN0IHg9IjE5IiB5PSIxNyIgd2lkdGg9Ijc0IiBoZWlnaHQ9IjM4IiByeD0iMyIgc3Ryb2tlPSIjOENDNEZGIi8+CiAgPHBhdGggZD0iTTMxIDMwaDUwTTMxIDQxaDM1IiBzdHJva2U9IiM2RkI0RTgiLz4KICA8cmVjdCB4PSIyOCIgeT0iNzAiIHdpZHRoPSI1NiIgaGVpZ2h0PSIxMiIgcng9IjIiIHN0cm9rZT0iIzhDQzRGRiIvPgogIDxwYXRoIGQ9Ik0zNSAxMDFoNDJNMzUgMTEzaDQyIiBzdHJva2U9IiM3Rjk4Q0MiLz4KICA8cGF0aCBkPSJNNDMgMTI5aDI2IiBzdHJva2U9IiM4Q0M0RkYiLz4KPC9nPgo8ZyBzdHJva2U9IiM4Q0M0RkYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICA8cGF0aCBkPSJNNTkwIDM0djQzTTU5MCA3N2g4OCIvPgogIDxjaXJjbGUgY3g9IjU5MCIgY3k9IjM0IiByPSI1IiBmaWxsPSIjRURGMkY5Ii8+CiAgPGNpcmNsZSBjeD0iNjc4IiBjeT0iNzciIHI9IjUiIGZpbGw9IiNFREYyRjkiLz4KICA8cGF0aCBkPSJNODU1IDQ1djk2TTg1NSA5M2g1NSIvPgogIDxjaXJjbGUgY3g9Ijg1NSIgY3k9IjQ1IiByPSI1IiBmaWxsPSIjRURGMkY5Ii8+CiAgPGNpcmNsZSBjeD0iOTEwIiBjeT0iOTMiIHI9IjUiIGZpbGw9IiNFREYyRjkiLz4KPC9nPgo8ZyBmaWxsPSIjQzk4QTFGIj4KICA8Y2lyY2xlIGN4PSI2NTAiIGN5PSIxODgiIHI9IjQiLz4KICA8Y2lyY2xlIGN4PSI4OTAiIGN5PSIxNjAiIHI9IjQiLz4KPC9nPgo8L3N2Zz4=";
+const emptyX=(k,t,sm)=>`<div class="emptyx${sm?' sm':''}"><img alt="" src="${ART[k]}"><p>${t}</p></div>`;
+/* =========================================================
+   訪談式寫法：選單 → 管理層週報 prompt
+   ========================================================= */
+const POOL_TYPES=['專案','維修單'];
+const LS_IV='wp.iv';
+const ivStore={ all(){return ls.get(LS_IV,{});}, get(k){return this.all()[k]||{};}, set(k,v){const a=this.all(); a[k]=v; ls.set(LS_IV,a);} };
+const MGMT_SYS = "# 系統角色與任務 (System Prompt)\n你現在是一位擁有 10 年以上經驗的金融核心系統「資深 IT 專案經理 (Technical PM)」。\n你的任務是將工程師或維運同仁記錄的技術碎雜進展、子任務清單及單號處理歷程（包含需求單與維修單），提煉並改寫為高階長官（處長、副理、科長層級）重視且具備決策價值的高品質週報表格。\n\n長官看週報的核心目的是：掌握進度、控管風險、分配資源，而非了解底層技術細節。\n\n## 核心轉換原則\n\n1. **以「專案主題 / 關聯單號」為核心聚合**\n   - 聚焦於整體業務目標（如：普發現金、網銀登入優化、補摺機換版等）。\n   - 將同一單號或主題下的多項瑣碎子任務，整合成連貫的進展段落，嚴禁拆成多個瑣碎的 Task 分散報告。\n\n2. **將技術術語翻譯成「業務效益與營運穩定度」 (講人話)**\n   - 淡化底層程式碼、參數名稱或除錯細節。\n   - 轉換範例：\n     - 原始：「修改 XML timeout 從 3000ms 改為 5000ms」 -> 改寫：「優化讀取容錯機制，解決偶發交易失敗問題」。\n     - 原始：「DB 死鎖，下達強制重開指令」 -> 改寫：「排除資料庫壅塞異常，並優化系統重啟與自我檢測機制」。\n\n3. **排除無效雜訊**\n   - 過濾日常例行性登入查核、單純電話通知等無決策價值的瑣事，僅呈現具里程碑性質或影響專案進度的成果。\n\n## 針對不同單據的專屬撰寫重點\n\n請根據輸入的單據類型，在內容中突顯以下管理面向：\n\n**A. 需求單 (Requirements / 新功能增修) —— 重點：交付承諾與資源協調**\n- **當前階段與里程碑：** 目前處於需求釐清、開發、SIT、UAT 或準備派版階段？本週達成了哪個關鍵節點？\n- **跨單位協作與潛在風險：** 是否有需要長官出面協調的阻礙？（如：等待企劃確認規格、催促廠商交付派版包）。\n- **預期時程 (ETA)：** 必須明確指出預計測試、驗收或上線的時間點。\n\n**B. 維修單 (Maintenance / 故障或 Bug 排除) —— 重點：災情控制與系統穩定度**\n- **處置進度與狀態：** 目前是「已提供暫時替代方案 (Workaround)」、「查修中」還是「已徹底修復」？\n- **影響範圍與業務衝擊：** 實際影響了什麼？（如：約 50 筆帳務受影響、某設備無法連線）。\n- **根本原因與預防措施 (RCA)：** 用非技術語言簡述發生原因，並強調查修後的「預防作為」（如：移至離峰時段執行、增設自動告警機制）。\n\n## 輸出格式規範\n\n每次輸出時，請嚴格依照以下 Markdown 表格格式，不可隨意更改欄位名稱。\n表格內容若需換行，請一律使用 `<br>`。\n\n| 項目 (單號/主題) | 本週處理重要進度與工作事項 | 備註 (狀態/時程) |\n| :--- | :--- | :--- |\n| **【單號】專案或異常主題** | **1. [事項標題一]**<br>[進展說明、風險與預計推展或預防措施]<br>**2. [事項標題二]**<br>[進展說明] | 預計 [上線/修復] 時間：[日期]<br>負責人：[姓名] |\n\n## 範例對照\n\n**【原始輸入範例】**\n[RQ10063] 補摺機軟體功能增修 (負責人: 王大明)\n- 每天看 log 沒事\n- 改了磁條讀取 timeout 參數，退本問題解決了，LAB 測試沒卡紙\n- 催廠商下週二交程式\n\n**【Claude 輸出範例】**\n| 項目 (單號/主題) | 本週處理重要進度與工作事項 | 備註 (狀態/時程) |\n| :--- | :--- | :--- |\n| **【RQ10063】補摺機軟體功能增修** | **1. 磁條讀取容錯機制優化**<br>已完成優化，有效降低客戶偶發退本率；實驗室壓力測試運作穩定。<br>**2. 軟硬體整合測試與派版**<br>進度正常，已督促廠商依限於下週二交付正式程式，隨後排入試點。 | 預計 11/15 驗收<br>負責人：王大明 |";
+const ivKind = c => c['卡片類型']==='維修單' ? 'ticket' : (['專案','資安專案'].includes(c['卡片類型'])?'project':'other');
+const IV_FLOW = {
+  project:[
+    {q:'這張單現在走到哪個階段？', hint:'長官最想先知道：現在卡在哪一站。', fields:[{id:'stage',type:'select',opts:['需求釐清','規格確認','開發中','SIT 測試','UAT 驗收','準備派版','已上線','暫緩']}]},
+    {q:'這週達成了哪些關鍵節點？', hint:'可複選；只挑有里程碑意義的，例行查核不用選。', fields:[{id:'miles',type:'chips',opts:['完成需求訪談','完成規格確認','提交廠商開發','廠商已交付程式','完成 SIT','完成 UAT','完成派版','完成教育訓練']},{id:'miles_o',type:'text',ph:'其他關鍵進展（選填）'}]},
+    {q:'有沒有需要長官出面協調的阻礙？', hint:'例如在等誰、卡在哪個單位。沒有就選「無」。', fields:[{id:'block',type:'select',opts:['無阻礙','等待企劃／業務單位確認規格','等待廠商交付','等待跨單位測試配合','人力／資源不足','需長官協調決策','其他']},{id:'block_d',type:'text',ph:'補充：卡在誰、需要誰協調（選填）'}]},
+    {q:'預計什麼時候測試、驗收或上線？', hint:'長官一定會問時間點，請給明確日期。', fields:[{id:'eta_k',type:'select',opts:['預計開始測試','預計驗收','預計上線','預計交版','預計完成需求確認']},{id:'eta_d',type:'date'}]},
+    {q:'把你的原始紀錄貼上來，我幫你翻成長官看得懂的話', hint:'雜亂也沒關係，這就是卡片的「本週進展」，改這裡就是改卡片。', fields:[{id:'raw',type:'raw',ph:'例：改了磁條讀取 timeout，LAB 測試沒卡紙；催廠商下週二交程式'}]}
+  ],
+  ticket:[
+    {q:'這張維修單現在處置到哪裡？', hint:'長官最在意：是查修中、已有替代方案，還是已修好。', fields:[{id:'status',type:'select',opts:['查修中','已提供暫時替代方案（Workaround）','已徹底修復','觀察期','等待廠商回覆']}]},
+    {q:'影響到哪些範圍？業務衝擊是什麼？', hint:'用數字說話：幾台、幾筆、客戶感受到什麼。', fields:[{id:'scope',type:'select',opts:['單一機台','同局多台機台','跨局多台機台','全區／系統性']},{id:'cnt',type:'text',ph:'受影響台數／筆數（如：3 台、約 50 筆）'},{id:'impact',type:'select',ph:'— 業務衝擊 —',opts:['無客戶衝擊（僅監控異常）','偶發交易失敗','客戶卡片被吞／退卡','無法提供服務（停機）','帳務／交易異常']}]},
+    {q:'為什麼會發生？', hint:'用非技術語言；還沒查出來就選「原因查明中」。', fields:[{id:'rca',type:'select',opts:['硬體零件故障','軟體缺陷','參數／設定問題','網路／通訊異常','環境因素（光線、溫度）','操作／流程問題','原因查明中']},{id:'rca_d',type:'text',ph:'白話補充原因（選填）'}]},
+    {q:'做了哪些預防作為？', hint:'可複選；長官會看你有沒有避免再發。', fields:[{id:'prev',type:'chips',opts:['增設自動告警','移至離峰時段執行','增加例行巡檢','廠商韌體／程式修補','加裝／調整設備','建立處理 SOP','暫無']},{id:'prev_o',type:'text',ph:'其他預防作為（選填）'}]},
+    {q:'預計什麼時候修復？', hint:'給日期；還不確定就先空白。', fields:[{id:'eta_k',type:'select',opts:['預計修復','預計結束觀察期','預計換版修正','預計廠商到場']},{id:'eta_d',type:'date'}]},
+    {q:'把你的原始紀錄貼上來，我幫你翻成長官看得懂的話', hint:'已預先帶入故障原因；補上處理過程即可，改這裡就是改卡片的「本週進展」。', fields:[{id:'raw',type:'raw',ph:'例：廠商 11/12 到場更換吐鈔模組，觀察中'}]}
+  ]
+};
+const TICKET_STATUS={'開立':'查修中','已通知廠商':'查修中','廠商處理中':'查修中','觀察期':'觀察期','結案':'已徹底修復'};
+function ivDefaults(c,kind){
+  const d={};
+  if(kind==='ticket'){ const n=parseJSON(c['機台清單'],[]).length; if(n) d.cnt=n+' 台'; if(TICKET_STATUS[c['狀態']]) d.status=TICKET_STATUS[c['狀態']]; }
+  return d;
+}
+const ivFilled = v => Array.isArray(v) ? v.length>0 : String(v||'').trim()!=='';
+/** 把選單答案轉成要給 AI 的條列；k = prog/risk/next */
+function ivLines(kind,iv){
+  const o=[], add=(k,t)=>{ if(t) o.push({k,t}); };
+  const j=(a,b,s='')=>[a,b].filter(ivFilled).map(x=>Array.isArray(x)?x.join('、'):x).join(s||'；');
+  if(kind==='project'){
+    add('prog',iv.stage&&`目前階段：${iv.stage}`);
+    add('prog',j(iv.miles,iv.miles_o)&&`本週關鍵節點：${j(iv.miles,iv.miles_o)}`);
+    add('risk',iv.block&&`需協調／阻礙：${iv.block}${iv.block_d?'（'+iv.block_d+'）':''}`);
+    add('next',(iv.eta_k||iv.eta_d)&&`預期時程：${iv.eta_k||'預計'} ${iv.eta_d||'（日期未定）'}`);
+  }else if(kind==='ticket'){
+    add('prog',iv.status&&`處置狀態：${iv.status}`);
+    add('prog',(iv.scope||iv.cnt)&&`影響範圍：${[iv.scope,iv.cnt&&'（'+iv.cnt+'）'].filter(Boolean).join('')}`);
+    add('prog',iv.impact&&`業務衝擊：${iv.impact}`);
+    add('prog',(iv.rca||iv.rca_d)&&`根本原因：${[iv.rca,iv.rca_d].filter(Boolean).join('；')}`);
+    add('next',j(iv.prev,iv.prev_o)&&`預防作為：${j(iv.prev,iv.prev_o)}`);
+    add('next',(iv.eta_k||iv.eta_d)&&`預期時程：${iv.eta_k||'預計'} ${iv.eta_d||'（日期未定）'}`);
+  }
+  return o;
+}
+const ivTypeLabel = c => c['卡片類型']==='維修單'?'維修單':(c['卡片類型']==='資安專案'?'需求單（資安專案）':(c['卡片類型']==='專案'?'需求單（專案）':c['卡片類型']));
+function ivBlock(c,kind,iv,raw){
+  const rq=String(c['關聯單號']||'').trim();
+  const L=ivLines(kind,iv).map(x=>'- '+x.t);
+  return [`### ${rq?'['+rq+'] ':''}${c['標題']}`,
+    `單據類型：${ivTypeLabel(c)}｜廠商：${c['廠商']||'-'}｜負責人：${c['負責人']||'-'}｜系統狀態：${c['狀態']||'-'}`,
+    L.length?`訪談結果：\n${L.join('\n')}`:'',
+    String(raw||'').trim()?`原始紀錄：\n${String(raw).trim()}`:''].filter(Boolean).join('\n');
+}
+function mgmtPrompt(blocks){
+  return `${MGMT_SYS}\n\n---\n\n## 本次輸入資料\n以下是本週的單據資料。「訪談結果」是承辦人以選單確認的事實，「原始紀錄」是承辦人的雜亂筆記，請依上面的規則改寫。\n\n${blocks.join('\n\n')}\n\n---\n\n## 輸出要求\n- 只輸出一個 Markdown 表格（含表頭），每個「單號／主題」一列；同一單號的多項事項整合在同列內，並以 <br> 換行。\n- 不得新增輸入資料中沒有的事實、日期、數字或人名；缺資料的面向直接省略，不要臆測。\n- 單號、機台代碼、廠商名稱、專有名詞原樣保留。\n- 備註欄需包含狀態、預計時間與負責人。\n- 不要輸出表格以外的任何說明文字。`;
+}
+const progText = p => !p?'':[p['本週進展'],p['風險與協同']&&('風險與協同：'+p['風險與協同']),p['下週預計']&&('下週預計：'+p['下週預計'])].filter(x=>x&&String(x).trim()).join('\n');
+function mgmtItems(wk){
+  const done=[], todo=[];
+  poolIds(wk).forEach(id=>{
+    const c=cardById(id), kind=ivKind(c), iv=Object.assign({},ivDefaults(c,kind),ivStore.get(`${wk}|${id}`));
+    const raw=progText(progOf(wk,id)), answered=ivLines(kind,ivStore.get(`${wk}|${id}`)).length>0;
+    if(!answered && !String(raw).trim()){ todo.push(c['標題']); return; }
+    done.push({id,c,answered,block:ivBlock(c,kind,iv,raw)});
+    if(!answered) todo.push(c['標題']);
+  });
+  return {done,todo};
+}
+function mdTableHtml(t){
+  const rows=String(t||'').split('\n').map(s=>s.trim()).filter(s=>s.startsWith('|'));
+  if(rows.length<2) return '';
+  const cells=l=>l.replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
+  const fmt=s=>esc(s).replace(/&lt;br\s*\/?&gt;/gi,'<br>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  const head=cells(rows[0]), body=rows.slice(1).filter(r=>!/^\|?\s*:?-{2,}/.test(r)).map(cells);
+  return `<div style="overflow-x:auto"><table class="mgt"><thead><tr>${head.map(h=>`<th>${fmt(h)}</th>`).join('')}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(x=>`<td>${fmt(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function openInterview(id){
+  const wk=CUR_WEEK, c=cardById(id), kind=ivKind(c), flow=IV_FLOW[kind]; if(!flow) return;
+  const k=`${wk}|${id}`, iv=Object.assign({},ivDefaults(c,kind),ivStore.get(k)); let step=0;
+  const root=$('#modalRoot'), close=()=>{ root.innerHTML=''; renderPool(); };
+  const ensureDraft=()=>{ const p=progOf(wk,id)||{}; draft[k]=draft[k]||{狀態:p['狀態']||c['狀態'],本週進展:p['本週進展']||'',風險與協同:p['風險與協同']||'',下週預計:p['下週預計']||''}; return draft[k]; };
+  const raw=()=>{ const d=draft[k], p=progOf(wk,id)||{}; return d?d['本週進展']:(p['本週進展']||''); };
+  const rawAll=()=>{ const d=draft[k]; return d?progText(d):progText(progOf(wk,id)); };
+  const answered=q=>q.fields.some(f=>f.type==='raw'?String(raw()).trim()!=='':ivFilled(iv[f.id]));
+  const fieldHtml=f=>{ const v=iv[f.id];
+    if(f.type==='select') return `<select data-ivf="${f.id}"><option value="">${esc(f.ph||'— 請選擇 —')}</option>${f.opts.map(o=>`<option ${v===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+    if(f.type==='chips') return `<div class="chips">${f.opts.map(o=>`<button type="button" class="chip ${(v||[]).includes(o)?'on':''}" data-chip="${f.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+    if(f.type==='text') return `<input data-ivf="${f.id}" placeholder="${esc(f.ph||'')}" value="${esc(v||'')}">`;
+    if(f.type==='date') return `<input type="date" data-ivf="${f.id}" value="${esc(v||'')}">`;
+    if(f.type==='raw') return `<textarea rows="9" data-ivraw placeholder="${esc(f.ph||'')}">${esc(raw())}</textarea>`;
+    return ''; };
+  const prompt=()=>mgmtPrompt([ivBlock(c,kind,iv,rawAll())]);
+  const sumHtml=()=>{ const L=ivLines(kind,iv); return L.length?L.map(x=>`<li>${esc(x.t)}</li>`).join(''):'<li class="muted">還沒有回答，從左邊開始選。</li>'; };
+  const draw=()=>{
+    const q=flow[step], n=flow.length;
+    root.innerHTML=`<div class="mask"><div class="modal iv-modal">
+      <div class="row" style="margin-bottom:12px"><div><div class="eyebrow">INTERVIEW ・ ${kind==='ticket'?'維修單':'需求單'}</div><h2 style="margin:4px 0 0;font-size:20px">${esc(c['標題'])}</h2><div class="muted mono" style="font-size:13px">${esc(c['關聯單號']||'')}${c['廠商']?' ・ '+esc(shortVendor(c['廠商'])):''} ・ ${esc(wk)}</div></div><span class="sp"></span><button class="ghost" id="ivClose">✕</button></div>
+      <div class="iv-grid">
+        <div class="iv-left">
+          <div class="iv-steps">${flow.map((x,i)=>`<button type="button" data-step="${i}" class="${i===step?'on':''} ${answered(x)?'done':''}" title="${esc(x.q)}">${i+1}</button>`).join('')}</div>
+          <div class="iv-q"><span class="iv-n">Q${step+1} / ${n}</span><h3>${esc(q.q)}</h3><p class="muted" style="margin:0">${esc(q.hint)}</p>
+            <div class="iv-fields">${q.fields.map(fieldHtml).join('')}</div></div>
+          <div class="iv-nav"><button id="ivPrev" ${step===0?'disabled':''}>上一題</button><span class="sp"></span>${step<n-1?'<button class="primary" id="ivNext">下一題</button>':'<button class="primary" id="ivDone">完成</button>'}</div>
+        </div>
+        <div class="iv-right">
+          <div class="label">目前訪談摘要</div>
+          <ul class="iv-sum" id="ivSum">${sumHtml()}</ul>
+          <label class="label" for="ivPrompt" style="margin-top:12px;display:block">管理層週報 prompt（即時更新）</label>
+          <textarea id="ivPrompt" readonly></textarea>
+          <div class="row" style="margin-top:9px;flex-wrap:wrap"><button class="primary" id="ivCopy">複製 prompt</button><a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">前往 Gemini ↗</a><a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">前往 Claude ↗</a><span class="sp"></span><button id="ivApply" title="把阻礙／時程寫進『風險與協同』『下週預計』（只補空白），並儲存本週進展">套用到卡片並儲存</button></div>
+          <div class="muted" style="font-size:13px;margin-top:8px">選單答案只存在這台電腦的瀏覽器；原始紀錄就是卡片的「本週進展」。</div>
+        </div></div></div></div>`;
+    sync();
+  };
+  const sync=()=>{ const p=$('#ivPrompt'); if(p){ p.value=prompt(); p.scrollTop=p.scrollHeight; } const s=$('#ivSum'); if(s) s.innerHTML=sumHtml();
+    $$('.iv-steps button').forEach((b,i)=>b.classList.toggle('done',answered(flow[i]))); };
+  root.onclick=async e=>{
+    const t=e.target;
+    if(t.closest('#ivClose')||t.closest('#ivDone')){ close(); return; }
+    if(t.classList&&t.classList.contains('mask')){ close(); return; }
+    const st=t.closest('[data-step]'); if(st){ step=+st.dataset.step; draw(); return; }
+    if(t.closest('#ivNext')){ step++; draw(); return; } if(t.closest('#ivPrev')){ step--; draw(); return; }
+    const ch=t.closest('[data-chip]'); if(ch){ const f=ch.dataset.chip, v=ch.dataset.v; const a=new Set(iv[f]||[]); a.has(v)?a.delete(v):a.add(v); iv[f]=[...a]; ch.classList.toggle('on',a.has(v)); ivStore.set(k,iv); sync(); return; }
+    if(t.closest('#ivCopy')){ copy(prompt(),'prompt 已複製，貼給 Gemini 或 Claude 即可'); return; }
+    if(t.closest('#ivApply')){
+      const d=ensureDraft(), L=ivLines(kind,iv), risk=L.filter(x=>x.k==='risk').map(x=>x.t).join('；'), next=L.filter(x=>x.k==='next').map(x=>x.t).join('；');
+      if(risk&&!String(d['風險與協同']).trim()) d['風險與協同']=risk;
+      if(next&&!String(d['下週預計']).trim()) d['下週預計']=next;
+      if(!String(d['本週進展']).trim()){ toast('請先在最後一題填原始紀錄（本週進展必填）',true); return; }
+      root.innerHTML=''; await saveProgress([id]);
+    }
+  };
+  root.oninput=e=>{ const t=e.target;
+    if(t.dataset.ivraw!==undefined){ ensureDraft()['本週進展']=t.value; sync(); return; }
+    const f=t.dataset.ivf; if(f){ iv[f]=t.value; ivStore.set(k,iv); sync(); } };
+  draw();
+}
+
 function demoData(){
   const d=n=>fmtD(addDays(TODAY,n)), wk=workWeek(TODAY), pw=shiftWeek(wk,-1);
   const C=(o)=>blankCard({來源:'示範',...o});
