@@ -1842,6 +1842,7 @@ const IV_FLOW = {
   ticket:[
     {q:'這個故障主題，長官一看就懂的名稱是什麼？', hint:'維修單合併後就是一個完整的故障主題，用業務角度命名，不用寫單號或機台代碼。', fields:[{id:'topic',type:'topic',ph:'例：迪堡 DN200AT 臉部辨識跨局反覆失敗'}]},
     {q:'這是哪一類故障現象？', hint:'可複選；跨局同類故障選同一類即可。', fields:[{id:'cats',type:'chips',opts:[...FAULT_CATS.map(x=>x.name),OTHER_CAT]},{id:'sym_o',type:'text',ph:'現象補充（選填，如：重開機後仍失敗）'}]},
+    {q:'這是單一廠商的問題，還是跨廠商都有？', hint:'長官會問：只有一家廠商，還是三家都有狀況？跨廠商通常代表共通因素（網路、環境、主機端），不只是單一廠商的產品問題。', fields:[{id:'vscope',type:'select',opts:['只有單一廠商（個案）','兩家廠商都有','三家廠商都有（共通性問題）','尚在確認中']},{id:'vendors',type:'chips',opts:()=>vendorList().map(shortVendor)},{id:'vhint',type:'vhint'},{id:'vscope_d',type:'text',ph:'補充（選填，如：其他廠商同機型無異常）'}]},
     {q:'把各次故障整合成一段話，會怎麼說？', hint:'上面的各次紀錄可以整理（刪掉重複、修正文字），下面寫成統整的一段。按「存回卡片描述」或最後的「套用到卡片並儲存」才會寫回卡片。', fields:[{id:'cases',type:'info',lbl:'各次故障紀錄（可直接編輯、刪除；來自卡片「描述」）'},{id:'cause',type:'area',lbl:'統整後的故障經過（給長官看的那一段）',ph:'例：11/1 起，3 個局的迪堡臉辨機台於清晨重開機後反覆辨識失敗，多集中在西曬時段。'},{id:'descbtn',type:'descbtn'}]},
     {q:'這個故障現在處置到哪裡？', hint:'長官最在意：是查修中、已有替代方案，還是已修好。', fields:[{id:'status',type:'select',opts:['查修中','已提供暫時替代方案（Workaround）','已徹底修復','觀察期','等待廠商回覆']}]},
     {q:'影響到哪些範圍？業務衝擊是什麼？', hint:'用數字說話：幾台、幾筆、客戶感受到什麼。', fields:[{id:'scope',type:'select',opts:['單一機台','同局多台機台','跨局多台機台','全區／系統性']},{id:'cnt',type:'text',ph:'受影響台數／筆數（如：3 台、約 50 筆）'},{id:'impact',type:'select',ph:'— 業務衝擊 —',opts:['無客戶衝擊（僅監控異常）','偶發交易失敗','客戶卡片被吞／退卡','無法提供服務（停機）','帳務／交易異常']}]},
@@ -1861,11 +1862,21 @@ function stripSeed(c,raw){
   const known=new Set((String(c['描述']||'')+'\n'+String(c['_descOrig']||'')).split('\n').map(s=>s.trim()).filter(Boolean));
   return String(raw||'').split('\n').filter(l=>{ const t=l.trim(); return t && !/^故障類別：/.test(t) && t!=='故障原因／現象：' && !known.has(t); }).join('\n').trim();
 }
+/** 近 60 天、同類故障各廠商的件數與機台數（來自 ATM 資料），協助判斷是個案還是跨廠商 */
+function vendorHint(c,iv){
+  const cats=((iv&&iv.cats&&iv.cats.length)?iv.cats:String(c['故障類別']||'').split('、')).filter(Boolean);
+  const since=addDays(TODAY,-60), names=vendorList().map(shortVendor);
+  const rows=((typeof ATM!=='undefined'&&ATM&&ATM.rows)||[]).map(r=>({v:shortVendor(r.vendor),cat:catOf(r),code:mcode(r),t:atmDate(r.issueTime)}))
+    .filter(r=>r.t&&r.t>=since&&(!cats.length||cats.includes(r.cat)));
+  const list=names.map(v=>{ const rs=rows.filter(r=>r.v===v); return {v,n:rs.length,m:new Set(rs.map(r=>r.code)).size}; });
+  return {cats,list,with:list.filter(x=>x.n>0).length,total:names.length};
+}
+const vendorHintText = hh => hh.list.map(x=>`${x.v} ${x.n} 件${x.n?`（${x.m} 台）`:''}`).join('、');
 function ivDefaults(c,kind){
   const d={};
   if(kind==='ticket'){
     const n=parseJSON(c['機台清單'],[]).length; if(n) d.cnt=n+' 台'; if(TICKET_STATUS[c['狀態']]) d.status=TICKET_STATUS[c['狀態']];
-    d.topic=topicOf(c); d.cats=String(c['故障類別']||'').split('、').filter(Boolean);
+    d.topic=topicOf(c); d.cats=String(c['故障類別']||'').split('、').filter(Boolean); d.vendors=[shortVendor(c['廠商'])].filter(Boolean);
   }
   return d;
 }
@@ -1884,6 +1895,7 @@ function ivLines(kind,iv){
     add('next',(iv.eta_k||iv.eta_d)&&`預期時程：${iv.eta_k||'預計'} ${iv.eta_d||'（日期未定）'}`);
   }else if(kind==='ticket'){
     add('prog',j(iv.cats,iv.sym_o)&&`故障現象類別：${j(iv.cats,iv.sym_o)}`);
+    add('prog',(iv.vscope||ivFilled(iv.vendors)||iv.vscope_d)&&`廠商範圍：${[iv.vscope,ivFilled(iv.vendors)&&'涉及 '+iv.vendors.join('、'),iv.vscope_d].filter(Boolean).join('；')}`);
     add('prog',String(iv.cause||'').trim()&&`統整故障經過：${String(iv.cause).trim().replace(/\n+/g,' ')}`);
     add('prog',iv.status&&`處置狀態：${iv.status}`);
     add('prog',(iv.scope||iv.cnt)&&`影響範圍：${[iv.scope,iv.cnt&&(iv.scope?'（'+iv.cnt+'）':iv.cnt)].filter(Boolean).join('')}`);
@@ -1903,6 +1915,7 @@ function ivBlock(c,kind,iv,raw){
     return [`### ${rq?'['+rq+'] ':''}故障主題：${String(iv.topic||topicOf(c))}`,
       `單據類型：維修單（統整後的單一故障主題）｜廠商：${c['廠商']||'-'}｜負責人：${c['負責人']||'-'}｜系統狀態：${c['狀態']||'-'}`,
       ms.length?`涵蓋範圍：${ms.length} 台機台、${br.size||'?'} 個局`:'',
+      (()=>{ const hh=vendorHint(c,iv); return hh.total?`系統資料（近 60 天${hh.cats.length?'「'+hh.cats.join('、')+'」':''}類故障，各廠商件數）：${vendorHintText(hh)}`:''; })(),
       L.length?`訪談結果：\n${L.join('\n')}`:'',
       cases?`各次故障紀錄（供你彙整成一段，不要逐筆列出）：\n${cases}`:'',
       pr?`處理進度紀錄：\n${pr}`:''].filter(Boolean).join('\n');
@@ -1913,7 +1926,7 @@ function ivBlock(c,kind,iv,raw){
     String(raw||'').trim()?`原始紀錄：\n${String(raw).trim()}`:''].filter(Boolean).join('\n');
 }
 function mgmtPrompt(blocks){
-  return `${MGMT_SYS}\n\n---\n\n## 本次輸入資料\n以下是本週的單據資料。「訪談結果」是承辦人以選單確認的事實，「原始紀錄」是承辦人的雜亂筆記，請依上面的規則改寫。\n\n${blocks.join('\n\n')}\n\n---\n\n## 輸出要求\n- 只輸出一個 Markdown 表格（含表頭），每個「單號／主題」一列；同一單號的多項事項整合在同列內，並以 <br> 換行。\n- 不得新增輸入資料中沒有的事實、日期、數字或人名；缺資料的面向直接省略，不要臆測。\n- 單號、機台代碼、廠商名稱、專有名詞原樣保留。\n- 維修單若涵蓋多個局或多台機台，請整合成「同一個故障主題」一列，用「共 N 台、跨 M 局」概述影響範圍，不要逐局拆成多列。\n- 備註欄需包含狀態、預計時間與負責人。\n- 不要輸出表格以外的任何說明文字。`;
+  return `${MGMT_SYS}\n\n---\n\n## 本次輸入資料\n以下是本週的單據資料。「訪談結果」是承辦人以選單確認的事實，「原始紀錄」是承辦人的雜亂筆記，請依上面的規則改寫。\n\n${blocks.join('\n\n')}\n\n---\n\n## 輸出要求\n- 只輸出一個 Markdown 表格（含表頭），每個「單號／主題」一列；同一單號的多項事項整合在同列內，並以 <br> 換行。\n- 不得新增輸入資料中沒有的事實、日期、數字或人名；缺資料的面向直接省略，不要臆測。\n- 單號、機台代碼、廠商名稱、專有名詞原樣保留。\n- 維修單若涵蓋多個局或多台機台，請整合成「同一個故障主題」一列，用「共 N 台、跨 M 局」概述影響範圍，不要逐局拆成多列。\n- 維修單必須明確寫出是「僅單一廠商」或「跨廠商（共 N 家）」的問題，讓長官判斷是個案還是共通性問題。\n- 備註欄需包含狀態、預計時間與負責人。\n- 不要輸出表格以外的任何說明文字。`;
 }
 const progText = p => !p?'':[p['本週進展'],p['風險與協同']&&('風險與協同：'+p['風險與協同']),p['下週預計']&&('下週預計：'+p['下週預計'])].filter(x=>x&&String(x).trim()).join('\n');
 function mgmtItems(wk){
@@ -1945,7 +1958,8 @@ function openInterview(id){
   const answered=q=>q.fields.some(f=>f.type==='raw'?String(raw()).trim()!=='':ivFilled(iv[f.id]));
   const fieldHtml=f=>{ const v=iv[f.id];
     if(f.type==='select') return `<select data-ivf="${f.id}"><option value="">${esc(f.ph||'— 請選擇 —')}</option>${f.opts.map(o=>`<option ${v===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
-    if(f.type==='chips') return `<div class="chips">${f.opts.map(o=>`<button type="button" class="chip ${(v||[]).includes(o)?'on':''}" data-chip="${f.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+    if(f.type==='vhint'){ const hh=vendorHint(c,iv); return `<div class="iv-ref"><div class="label">系統資料：近 60 天${hh.cats.length?'「'+esc(hh.cats.join('、'))+'」':''}類故障</div><div>${esc(vendorHintText(hh))}</div><div class="muted" style="font-size:13px;margin-top:4px">${hh.with===0?'ATM 資料中查無同類故障':`目前有 ${hh.with} / ${hh.total} 家廠商出現同類故障（僅供參考，請依實際查證選擇）`}</div></div>`; }
+    if(f.type==='chips') return `<div class="chips">${(typeof f.opts==='function'?f.opts():f.opts).map(o=>`<button type="button" class="chip ${(v||[]).includes(o)?'on':''}" data-chip="${f.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
     if(f.type==='text') return `<input data-ivf="${f.id}" placeholder="${esc(f.ph||'')}" value="${esc(v||'')}">`;
     if(f.type==='date') return `<input type="date" data-ivf="${f.id}" value="${esc(v||'')}">`;
     if(f.type==='area') return `<textarea rows="5" data-ivf="${f.id}" placeholder="${esc(f.ph||'')}">${esc(v||'')}</textarea>`;
